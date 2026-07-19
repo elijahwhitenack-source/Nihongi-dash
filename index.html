@@ -38,19 +38,31 @@
   nav button.active{background:var(--accent); color:#fff; border-color:var(--accent);}
   .card{background:var(--panel); border-radius:16px; padding:20px; margin-bottom:14px; border:1px solid #2a2a3a;}
 
-  /* Session bar */
-  #session-bar{background:var(--panel); border-radius:14px; padding:12px 14px; margin-bottom:12px; border:1px solid #2a2a3a;}
-  .sb-top{display:flex; justify-content:space-between; align-items:baseline; font-size:.75rem; color:var(--muted); margin-bottom:8px;}
-  .sb-top b{color:var(--text); font-size:.9rem;}
-  .bar{height:7px; background:#2a2a3a; border-radius:4px; overflow:hidden;}
+  /* One compact HUD instead of a progress bar plus four stat tiles */
+  #hud{background:var(--panel); border-radius:14px; padding:11px 14px; margin-bottom:10px; border:1px solid #2a2a3a;}
+  .hud-top{display:flex; justify-content:space-between; align-items:baseline; font-size:.78rem; margin-bottom:7px;}
+  #hud-tier{color:var(--text); font-weight:600;}
+  .hud-top b{color:var(--muted); font-size:.72rem; font-weight:500;}
+  .bar{height:6px; background:#2a2a3a; border-radius:4px; overflow:hidden;}
   .bar > i{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--warn)); transition:width .4s;}
-  .sb-sub{display:flex; gap:14px; margin-top:9px; font-size:.7rem; color:var(--muted);}
-  .sb-sub b{color:var(--accent2);}
+  .hud-chips{display:flex; gap:13px; margin-top:8px; font-size:.7rem; color:var(--muted);}
+  .hud-chips b{color:var(--accent2);}
+  #hud-unlock{margin-top:7px; font-size:.68rem; color:var(--muted); line-height:1.4;}
+  #hud-unlock.ready{color:var(--good);}
 
-  .stats-row{display:flex; gap:8px; margin-bottom:14px;}
-  .stat{flex:1; background:var(--panel); border-radius:12px; padding:11px 6px; text-align:center; border:1px solid #2a2a3a;}
-  .stat b{display:block; font-size:1.25rem; color:var(--accent2);}
-  .stat span{font-size:.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em;}
+  /* The verdict banner — the single unambiguous right/wrong signal */
+  #verdict{
+    width:100%; border-radius:12px; padding:13px; text-align:center; font-size:1rem;
+    font-weight:600; display:none; line-height:1.4;
+  }
+  #verdict.right{background:var(--good); color:#0a2418;}
+  #verdict.wrong{background:var(--bad); color:#fff;}
+  #verdict small{display:block; font-weight:500; font-size:.8rem; opacity:.85; margin-top:3px;}
+
+  #continue-btn{
+    width:100%; padding:14px; border-radius:11px; border:none;
+    background:var(--accent2); color:#0a1a22; font-size:.95rem; font-weight:600; cursor:pointer;
+  }
 
   /* Flashcard */
   #flash-wrap{display:flex; flex-direction:column; align-items:center; gap:14px;}
@@ -94,7 +106,6 @@
     width:100%; padding:12px; border-radius:10px; border:1px solid #303045; background:var(--panel2);
     color:var(--text); font-size:1rem; margin-top:10px;
   }
-  #type-feedback{margin-top:9px; font-size:.85rem; min-height:1.2em;}
   .ok{color:var(--good);} .no{color:var(--bad);}
   .mc-options{display:flex; flex-direction:column; gap:7px; margin-top:10px; width:100%;}
   .mc-options button{
@@ -164,40 +175,29 @@
 
   <!-- ===== TODAY ===== -->
   <section id="view-today">
-    <div id="session-bar">
-      <div class="sb-top">
-        <span>Today's session</span>
-        <b><span id="sess-min">0</span> / 30 min</b>
+    <div id="hud">
+      <div class="hud-top">
+        <span id="hud-tier">Tier 1 · Hiragana</span>
+        <b><span id="sess-min">0</span>/30 min</b>
       </div>
       <div class="bar"><i id="sess-fill"></i></div>
-      <div class="sb-sub">
-        <span>New today <b id="sess-new">0</b>/<b id="sess-quota">8</b></span>
-        <span>Reps <b id="sess-reps">0</b></span>
-        <span>Accuracy <b id="sess-acc">—</b></span>
+      <div class="hud-chips">
+        <span>🔥 <b id="stat-streak">0</b></span>
+        <span>New <b id="sess-new">0</b>/<b id="sess-quota">12</b></span>
+        <span>Due <b id="stat-due">0</b></span>
+        <span>Acc <b id="sess-acc">—</b></span>
       </div>
+      <div id="hud-unlock">—</div>
     </div>
 
-    <div class="stats-row">
-      <div class="stat"><b id="stat-streak">0</b><span>Streak</span></div>
-      <div class="stat"><b id="stat-due">0</b><span>Due</span></div>
-      <div class="stat"><b id="stat-learned">0</b><span>Learned</span></div>
-      <div class="stat"><b id="stat-tier">1</b><span>Tier</span></div>
-    </div>
-
-    <div class="toggles">
-      <button id="mode-mc" class="active">Choice</button>
-      <button id="mode-type">Typing</button>
-      <button id="mode-recall">Recall</button>
-      <button id="mode-listen">Listen</button>
-    </div>
     <div class="toggles">
       <button id="opt-romaji">Show romaji</button>
-      <button id="opt-autoplay">Auto-play</button>
       <button id="opt-reviewonly">Review only</button>
     </div>
     <div id="voice-warning" class="note" style="display:none;"></div>
 
     <div class="card" id="flash-wrap">
+      <div id="verdict"></div>
       <div id="flash-card">
         <button id="speak-btn" title="Hear it (J)">🔊</button>
         <div id="new-badge">New</div>
@@ -210,8 +210,8 @@
       <div id="mc-area" class="mc-options"></div>
       <div id="type-area" style="display:none; width:100%;">
         <input id="type-input" type="text" placeholder="Type the romaji…" autocomplete="off" autocapitalize="off" spellcheck="false">
-        <div id="type-feedback"></div>
       </div>
+      <button id="continue-btn" style="display:none;">Got it — continue</button>
       <div class="grade-row" id="grade-row" style="display:none;">
         <button class="g-again" data-g="0">Again</button>
         <button class="g-hard" data-g="1">Hard</button>
@@ -696,15 +696,15 @@ function initVoices(){
   const warn = $('voice-warning');
   const btn = $('speak-btn');
   if(!synth){
-    btn.disabled = true; $('mode-listen').disabled = true;
+    btn.disabled = true;
     warn.style.display = 'block';
-    warn.textContent = 'This browser has no speech synthesis, so audio and Listen mode are unavailable.';
+    warn.textContent = 'This browser has no speech synthesis, so audio and listening drills are unavailable.';
   } else if(!jaVoice){
-    btn.disabled = true; $('mode-listen').disabled = true;
+    btn.disabled = true;
     warn.style.display = 'block';
-    warn.textContent = 'No Japanese voice installed. On macOS add one in System Settings → Accessibility → Spoken Content → System Voice → Manage Voices (Japanese). On iOS: Settings → Accessibility → Spoken Content → Voices.';
+    warn.textContent = 'No Japanese voice installed, so listening drills are skipped. On macOS add one in System Settings → Accessibility → Spoken Content → System Voice → Manage Voices (Japanese). On iOS: Settings → Accessibility → Spoken Content → Voices.';
   } else {
-    btn.disabled = false; $('mode-listen').disabled = false;
+    btn.disabled = false;
     warn.style.display = 'none';
   }
 }
@@ -723,8 +723,9 @@ function speak(text){
     const u = new SpeechSynthesisUtterance(text);
     u.voice = jaVoice;
     u.lang = jaVoice.lang || 'ja-JP';
-    u.rate = 0.85;   // native pace is too fast to decompose as a beginner
+    u.rate = 0.7;    // slow enough to pick apart individual sounds
     u.pitch = 1;
+    u.volume = 1;    // don't inherit whatever the platform defaults to
     const btn = $('speak-btn');
     u.onstart = () => btn.classList.add('speaking');
     u.onend = u.onerror = () => btn.classList.remove('speaking');
@@ -736,12 +737,39 @@ function speak(text){
 const speakableOf = (c) => c && c.prompt ? c.prompt : null;
 
 /* ==========================================================================
+   8c. AUTOMATIC DIFFICULTY — each card gets harder as it matures, so the
+       ramp happens per-card instead of you choosing a mode for everything.
+
+         unseen            -> teach   (shown, not tested)
+         box 0-1  fresh    -> mc      (recognise among four)
+         box 2-3  familiar -> listen  (audio only, no writing shown)
+         box 4+   solid    -> type    (produce it from memory)
+
+       Two guards: without a Japanese voice, listen degrades to mc; and
+       typing is only asked for short answers, because typing out
+       "kore wa ikura desu ka" on a phone is a test of thumbs, not recall.
+   ========================================================================== */
+const TYPEABLE_MAX = 14;
+
+function typeableAnswer(c){
+  return (c.accepts || []).some(a => a.length > 0 && a.length <= TYPEABLE_MAX);
+}
+
+function autoModeFor(c){
+  if(!c) return 'mc';
+  if(!isSeen(c.id)) return 'teach';
+  const box = cardState(c.id).box;
+  if(box <= 1) return 'mc';
+  if(box <= 3) return (jaVoice && speakableOf(c)) ? 'listen' : 'mc';
+  return typeableAnswer(c) ? 'type' : (jaVoice && speakableOf(c) ? 'listen' : 'mc');
+}
+
+/* ==========================================================================
    9. CARD SELECTION — reviews first, new material drip-fed between them.
    ========================================================================== */
-let mode = 'mc';
+let forcedMode = null;   // null = let autoModeFor pick per card
 let showRomaji = false;
 let reviewOnly = false;
-let autoplay = false;
 let current = null;
 let currentIsNew = false;
 let isExtraPractice = false;
@@ -802,13 +830,19 @@ function distractorsFor(card, n){
 /* ==========================================================================
    10. RENDERING
    ========================================================================== */
+let cardMode = 'mc';      // the mode chosen for the card on screen
+let answered = false;     // guards against double-answering during the pause
+
 function renderCard(){
-  const back = $('flash-back'), rom = $('flash-romaji'), grade = $('grade-row'),
+  const back = $('flash-back'), rom = $('flash-romaji'),
         hint = $('flash-hint'), mcArea = $('mc-area'), typeArea = $('type-area');
   back.style.display = 'none'; rom.style.display = 'none';
-  grade.style.display = 'none';
-  $('type-feedback').textContent = ''; $('type-input').value = '';
+  $('grade-row').style.display = 'none';
+  $('continue-btn').style.display = 'none';
+  $('verdict').style.display = 'none';
+  $('type-input').value = '';
   mcArea.innerHTML = '';
+  answered = false;
 
   current = pickNext();
   $('new-badge').style.display = current && currentIsNew ? 'block' : 'none';
@@ -821,39 +855,42 @@ function renderCard(){
       (anyLeft ? `Daily quota done — ${state.quota} new cards absorbed` : 'Everything unlocked is caught up');
     hint.textContent = anyLeft && !reviewOnly ? 'Come back tomorrow, or unlock the next tier in Path.' : '';
     typeArea.style.display = 'none';
+    $('speak-btn').style.visibility = 'hidden';
     return;
   }
 
   const c = current;
-  const listening = mode === 'listen' && jaVoice && !currentIsNew;
+  cardMode = forcedMode || autoModeFor(c);
+  $('speak-btn').style.visibility = 'visible';
+  $('speak-btn').disabled = !jaVoice;
+  $('flash-sub').textContent = `${c.label} · tier ${c.tier}` + (isExtraPractice ? ' · extra practice' : '');
 
-  $('flash-front').className = c.category === 'phrase' ? 'phrase' : '';
-  if(listening){
-    // Hide the writing — the audio is the whole prompt.
+  // Listen: the audio is the question, so the writing stays hidden.
+  if(cardMode === 'listen'){
     $('flash-front').className = '';
     $('flash-front').innerHTML = '<span id="listen-face">🎧</span>';
   } else {
+    $('flash-front').className = c.category === 'phrase' ? 'phrase' : '';
     $('flash-front').textContent = c.prompt;
   }
-  $('flash-sub').textContent = `${c.label} · tier ${c.tier}` + (isExtraPractice ? ' · extra practice' : '');
-  $('speak-btn').disabled = !jaVoice;
-  if(showRomaji && extraRomaji(c)){ rom.textContent = extraRomaji(c); rom.style.display = 'block'; }
+  if(showRomaji && cardMode !== 'listen' && extraRomaji(c)){
+    rom.textContent = extraRomaji(c); rom.style.display = 'block';
+  }
 
-  // A brand-new card is taught, not tested: show the answer up front.
-  if(currentIsNew){
+  // Teaching a brand-new card: no question, no scoring, just meet it.
+  if(cardMode === 'teach'){
     back.textContent = c.answer; back.style.display = 'block';
     const r = extraRomaji(c);
     if(r){ rom.textContent = r; rom.style.display = 'block'; }
-    hint.textContent = 'New — read it, say it aloud, then grade how well it stuck.';
+    hint.textContent = 'New — read it and say it aloud.';
     typeArea.style.display = 'none';
-    grade.style.display = 'flex';
-    if(autoplay) speak(speakableOf(c));
+    $('continue-btn').style.display = 'block';
     return;
   }
 
-  if(mode === 'mc' || listening){
+  if(cardMode === 'mc' || cardMode === 'listen'){
     typeArea.style.display = 'none';
-    hint.textContent = listening ? 'Listen, then choose the meaning' : 'Choose the meaning';
+    hint.textContent = cardMode === 'listen' ? 'Listen, then choose the meaning' : 'Choose the meaning';
     const opts = [c, ...distractorsFor(c, 3)].sort(() => Math.random() - 0.5);
     opts.forEach(o => {
       const b = document.createElement('button');
@@ -861,21 +898,21 @@ function renderCard(){
       b.onclick = () => answerMc(o.id === c.id, b, mcArea);
       mcArea.appendChild(b);
     });
-    // In Listen mode the audio IS the prompt, so it always plays.
-    if(listening || autoplay) speak(speakableOf(c));
+    // A short beat so the audio doesn't stab the moment the card appears.
+    if(cardMode === 'listen') setTimeout(() => { if(current === c) speak(speakableOf(c)); }, 450);
     return;
   }
 
-  if(autoplay) speak(speakableOf(c));
-
-  if(mode === 'type'){
+  if(cardMode === 'type'){
     typeArea.style.display = 'block';
-    hint.textContent = 'Type the romaji or the meaning, then press Enter';
+    hint.textContent = 'Type the romaji, then press Enter';
     $('type-input').focus();
-  } else { // recall
-    typeArea.style.display = 'none';
-    hint.textContent = 'Say it out loud, then tap to check';
+    return;
   }
+
+  // recall — the only mode where the app genuinely can't judge you
+  typeArea.style.display = 'none';
+  hint.textContent = 'Say it out loud, then tap the card to check';
 }
 
 /* Kana answers are already romaji — don't print the same string twice. */
@@ -884,9 +921,9 @@ function extraRomaji(c){
   return c.romaji.toLowerCase() === c.answer.toLowerCase() ? null : c.romaji;
 }
 
-function reveal(){
-  // Listen mode hid the writing — show it now so ear and eye connect.
-  if(mode === 'listen'){
+/* Reveal the full answer on the card face. */
+function showAnswer(){
+  if(cardMode === 'listen'){
     $('flash-front').className = current.category === 'phrase' ? 'phrase' : '';
     $('flash-front').textContent = current.prompt;
   }
@@ -894,29 +931,43 @@ function reveal(){
   $('flash-back').style.display = 'block';
   const r = extraRomaji(current);
   if(r){ $('flash-romaji').textContent = r; $('flash-romaji').style.display = 'block'; }
-  $('grade-row').style.display = 'flex';
+}
+
+/* One unmistakable verdict, then move on by itself. */
+function settle(correct){
+  if(answered) return;
+  answered = true;
+  showAnswer();
+
+  const v = $('verdict');
+  v.className = correct ? 'right' : 'wrong';
+  v.innerHTML = correct
+    ? '✓ Correct'
+    : `✗ Not quite<small>${current.prompt} — ${current.answer}</small>`;
+  v.style.display = 'block';
+  $('flash-hint').textContent = '';
+
+  grade(correct ? 2 : 0, correct ? 700 : 2200);
 }
 
 function answerMc(correct, btn, area){
-  [...area.children].forEach(b => b.disabled = true);
-  btn.classList.add(correct ? 'correct' : 'wrong');
-  reveal();
-  if(!correct) grade(0);
+  if(answered) return;
+  [...area.children].forEach(b => {
+    b.disabled = true;
+    if(b === btn) b.classList.add(correct ? 'correct' : 'wrong');
+    else if(!correct && b.textContent === current.answer) b.classList.add('correct');
+  });
+  settle(correct);
 }
 
 function checkTyped(){
-  if(!current) return;
+  if(!current || answered) return;
   const val = $('type-input').value.trim().toLowerCase();
   if(!val) return;
-  const correct = current.accepts.includes(val);
-  const fb = $('type-feedback');
-  fb.textContent = correct ? 'Correct' : `Not quite — ${current.answer}${current.romaji ? ' ('+current.romaji+')' : ''}`;
-  fb.className = correct ? 'ok' : 'no';
-  reveal();
-  if(!correct) grade(0);
+  settle(current.accepts.includes(val));
 }
 
-function grade(g){
+function grade(g, delay = 0){
   if(!current) return;
   const cs = cardState(current.id);
   const s = session();
@@ -942,25 +993,41 @@ function grade(g){
   autoUnlock();
   saveState();
   renderAll();
-  renderCard();
+
+  // Pause on the verdict so it registers, then move on unprompted.
+  if(delay > 0) setTimeout(renderCard, delay);
+  else renderCard();
 }
 
 function renderSession(){
   const s = session();
-  const mins = Math.floor(s.activeMs / 60000);
-  $('sess-min').textContent = mins;
+  $('sess-min').textContent = Math.floor(s.activeMs / 60000);
   $('sess-fill').style.width = Math.min(100, (s.activeMs / SESSION_TARGET_MS) * 100) + '%';
   $('sess-new').textContent = s.newIds.length;
   $('sess-quota').textContent = state.quota;
-  $('sess-reps').textContent = s.reps;
   $('sess-acc').textContent = s.reps >= 5 ? Math.round((s.hits / s.reps) * 100) + '%' : '—';
 }
 
 function renderStats(){
   $('stat-streak').textContent = state.streak || 0;
   $('stat-due').textContent = dueCards().length;
-  $('stat-learned').textContent = Object.entries(state.cards).filter(([,v]) => v.seen && v.box >= RETAINED).length;
-  $('stat-tier').textContent = state.unlockedTier;
+
+  // The "am I good to move on?" line, on the main screen instead of buried.
+  const t = state.unlockedTier;
+  $('hud-tier').textContent = `Tier ${t} · ${TIERS[t].name}`;
+  const pct = Math.round(tierMastery(t) * 100);
+  const need = Math.round(UNLOCK_AT * 100);
+  const el = $('hud-unlock');
+  if(t >= MAX_TIER){
+    el.className = pct >= need ? 'ready' : '';
+    el.textContent = `${pct}% solid · final tier`;
+  } else if(pct >= need){
+    el.className = 'ready';
+    el.textContent = `${pct}% solid — tier ${t + 1} (${TIERS[t + 1].name}) unlocks now`;
+  } else {
+    el.className = '';
+    el.textContent = `${pct}% solid — ${need}% unlocks tier ${t + 1}, ${TIERS[t + 1].name}`;
+  }
 }
 
 function renderNewToday(){
@@ -1067,31 +1134,32 @@ function updateCountdown(){
   $('days-left').textContent = diff > 0 ? diff : 0;
 }
 
-$('flash-card').addEventListener('click', () => { if(current) reveal(); });
+// Tapping the card only does something in recall mode, where you self-check.
+$('flash-card').addEventListener('click', () => {
+  if(!current || answered || cardMode !== 'recall') return;
+  showAnswer();
+  $('flash-hint').textContent = 'Did you get it?';
+  $('grade-row').style.display = 'flex';
+});
+
 $('grade-row').addEventListener('click', (e) => {
   const b = e.target.closest('button[data-g]');
-  if(b) grade(Number(b.dataset.g));
+  if(!b || answered) return;
+  answered = true;
+  grade(Number(b.dataset.g));
 });
+
+$('continue-btn').onclick = () => {
+  if(answered) return;
+  answered = true;
+  grade(2);   // meeting a new card counts as one clean exposure
+};
+
 $('type-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') checkTyped(); });
 
-function setMode(m){
-  mode = m;
-  ['mc','type','recall','listen'].forEach(k => $('mode-' + k).classList.toggle('active', k === m));
-  renderCard();
-}
-$('mode-mc').onclick = () => setMode('mc');
-$('mode-type').onclick = () => setMode('type');
-$('mode-recall').onclick = () => setMode('recall');
-$('mode-listen').onclick = () => setMode('listen');
-
 $('speak-btn').onclick = (e) => {
-  e.stopPropagation();          // don't flip the card just to replay audio
+  e.stopPropagation();          // don't reveal the card just to replay audio
   speak(speakableOf(current));
-};
-$('opt-autoplay').onclick = () => {
-  autoplay = !autoplay;
-  $('opt-autoplay').classList.toggle('active', autoplay);
-  if(autoplay) speak(speakableOf(current));
 };
 
 // J replays the audio without reaching for the button mid-drill.
