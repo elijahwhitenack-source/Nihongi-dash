@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nihongo Dash</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon.svg">
+<meta name="theme-color" content="#12121a">
+<style>
+  :root{
+    --bg:#12121a; --panel:#1c1c28; --panel2:#232333; --text:#f5f0e6; --muted:#8d8da0;
+    --accent:#e6484f; --accent2:#4fb3e6; --good:#4fe6a0; --bad:#e6484f; --warn:#e6c64f;
+    --lock:#3a3a50;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    display:flex; flex-direction:column; min-height:100vh;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  header{
+    padding:14px 20px 10px; display:flex; align-items:center; justify-content:space-between;
+    border-bottom:1px solid #2a2a3a;
+  }
+  header h1{font-size:1.05rem; margin:0; letter-spacing:.02em;}
+  header h1 span{color:var(--accent);}
+  #countdown{font-size:.75rem; color:var(--muted); text-align:right; line-height:1.3;}
+  #countdown b{color:var(--warn); font-size:.95rem;}
+  main{flex:1; padding:16px; max-width:560px; width:100%; margin:0 auto;}
+  nav{display:flex; gap:6px; margin-bottom:14px;}
+  nav button{
+    flex:1; padding:9px 4px; border-radius:10px; border:1px solid #2a2a3a;
+    background:var(--panel); color:var(--muted); font-size:.78rem; cursor:pointer;
+  }
+  nav button.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .card{background:var(--panel); border-radius:16px; padding:20px; margin-bottom:14px; border:1px solid #2a2a3a;}
+
+  /* Session bar */
+  #session-bar{background:var(--panel); border-radius:14px; padding:12px 14px; margin-bottom:12px; border:1px solid #2a2a3a;}
+  .sb-top{display:flex; justify-content:space-between; align-items:baseline; font-size:.75rem; color:var(--muted); margin-bottom:8px;}
+  .sb-top b{color:var(--text); font-size:.9rem;}
+  .bar{height:7px; background:#2a2a3a; border-radius:4px; overflow:hidden;}
+  .bar > i{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--warn)); transition:width .4s;}
+  .sb-sub{display:flex; gap:14px; margin-top:9px; font-size:.7rem; color:var(--muted);}
+  .sb-sub b{color:var(--accent2);}
+
+  .stats-row{display:flex; gap:8px; margin-bottom:14px;}
+  .stat{flex:1; background:var(--panel); border-radius:12px; padding:11px 6px; text-align:center; border:1px solid #2a2a3a;}
+  .stat b{display:block; font-size:1.25rem; color:var(--accent2);}
+  .stat span{font-size:.62rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em;}
+
+  /* Flashcard */
+  #flash-wrap{display:flex; flex-direction:column; align-items:center; gap:14px;}
+  #flash-card{
+    width:100%; min-height:170px; border-radius:18px; background:var(--panel2);
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+    cursor:pointer; border:1px solid #303045; padding:20px; text-align:center; position:relative;
+  }
+  #new-badge{
+    position:absolute; top:10px; right:12px; font-size:.6rem; letter-spacing:.08em;
+    background:var(--good); color:#0a2418; padding:3px 7px; border-radius:20px; display:none; font-weight:700;
+  }
+  #flash-front{font-size:2.4rem; font-weight:600; line-height:1.35;}
+  #flash-front.phrase{font-size:1.7rem;}
+  #flash-sub{font-size:.72rem; color:var(--muted); margin-top:8px; text-transform:uppercase; letter-spacing:.06em;}
+  #flash-back{display:none; font-size:1.2rem; color:var(--good); margin-top:12px;}
+  #flash-romaji{display:none; font-size:.85rem; color:var(--muted); margin-top:4px;}
+  #flash-hint{font-size:.68rem; color:var(--muted); margin-top:14px;}
+  #speak-btn{
+    position:absolute; top:8px; left:10px; background:none; border:1px solid #303045;
+    color:var(--accent2); width:36px; height:36px; border-radius:50%; cursor:pointer;
+    font-size:1rem; display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  #speak-btn:hover{background:var(--panel);}
+  #speak-btn:disabled{opacity:.3; cursor:not-allowed;}
+  #speak-btn.speaking{border-color:var(--accent2); background:#1b3140;}
+  #listen-face{font-size:3.2rem; line-height:1.2;}
+  .grade-row{display:flex; gap:7px; width:100%;}
+  .grade-row button{flex:1; padding:12px 3px; border-radius:10px; border:none; font-size:.82rem; color:#fff; cursor:pointer;}
+  .g-again{background:var(--bad);} .g-hard{background:var(--warn); color:#222;}
+  .g-good{background:var(--good); color:#123;} .g-easy{background:var(--accent2); color:#0a1a22;}
+
+  .toggles{display:flex; gap:7px; margin-bottom:12px;}
+  .toggles button{
+    flex:1; padding:8px 4px; border-radius:9px; border:1px solid #2a2a3a; background:var(--panel);
+    color:var(--muted); font-size:.72rem; cursor:pointer;
+  }
+  .toggles button.active{background:var(--accent2); color:#0a1a22; border-color:var(--accent2);}
+
+  #type-input{
+    width:100%; padding:12px; border-radius:10px; border:1px solid #303045; background:var(--panel2);
+    color:var(--text); font-size:1rem; margin-top:10px;
+  }
+  #type-feedback{margin-top:9px; font-size:.85rem; min-height:1.2em;}
+  .ok{color:var(--good);} .no{color:var(--bad);}
+  .mc-options{display:flex; flex-direction:column; gap:7px; margin-top:10px; width:100%;}
+  .mc-options button{
+    padding:12px; border-radius:10px; border:1px solid #303045; background:var(--panel2);
+    color:var(--text); font-size:.95rem; cursor:pointer; text-align:left;
+  }
+  .mc-options button.correct{background:var(--good); color:#123; border-color:var(--good);}
+  .mc-options button.wrong{background:var(--bad); color:#fff; border-color:var(--bad);}
+
+  h2.section-title{font-size:.85rem; color:var(--muted); margin:18px 0 8px; text-transform:uppercase; letter-spacing:.06em;}
+  h2.section-title:first-child{margin-top:0;}
+  .item{background:var(--panel); border-radius:13px; padding:14px 16px; margin-bottom:9px; border:1px solid #2a2a3a;}
+  .item h3{margin:0 0 5px; color:var(--accent2); font-size:1rem;}
+  .item .jp{font-size:1.05rem; margin:4px 0;}
+  .item .en{color:var(--muted); font-size:.82rem;}
+  .item .ro{color:#6f6f88; font-size:.75rem; font-style:italic;}
+
+  /* Path */
+  .tier{border-radius:14px; padding:14px 16px; margin-bottom:10px; border:1px solid #2a2a3a; background:var(--panel);}
+  .tier.locked{opacity:.5;}
+  .tier.current{border-color:var(--accent);}
+  .tier-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:7px;}
+  .tier-head h3{margin:0; font-size:.95rem;}
+  .tier-head .pct{font-size:.78rem; color:var(--accent2);}
+  .tier .desc{font-size:.76rem; color:var(--muted); margin-bottom:9px;}
+  .tier .bar{height:5px;}
+  .badge{font-size:.6rem; padding:2px 7px; border-radius:20px; letter-spacing:.06em; text-transform:uppercase;}
+  .b-locked{background:var(--lock); color:#9a9ab5;}
+  .b-open{background:var(--good); color:#0a2418;}
+  .b-done{background:var(--accent2); color:#0a1a22;}
+  #unlock-btn{
+    width:100%; margin-top:10px; padding:11px; border-radius:10px; border:none;
+    background:var(--accent); color:#fff; font-size:.85rem; cursor:pointer;
+  }
+  #unlock-btn:disabled{background:var(--lock); color:#7a7a95; cursor:not-allowed;}
+
+  .note{
+    font-size:.72rem; color:var(--muted); background:var(--panel2); border-radius:9px; padding:10px 12px;
+    margin-top:14px; border:1px dashed #3a3a50; line-height:1.5;
+  }
+  .filter-row{display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap;}
+  .filter-row button{
+    padding:6px 12px; border-radius:20px; border:1px solid #2a2a3a; background:var(--panel);
+    color:var(--muted); font-size:.72rem; cursor:pointer;
+  }
+  .filter-row button.active{background:var(--accent2); color:#0a1a22; border-color:var(--accent2);}
+  footer{text-align:center; padding:12px; font-size:.66rem; color:var(--muted);}
+  #install-btn{display:none; margin-top:10px; width:100%; padding:10px; border-radius:10px; border:none; background:var(--accent); color:#fff; font-size:.85rem; cursor:pointer;}
+  .done-msg{text-align:center; padding:10px 0;}
+  .done-msg .big{font-size:2.2rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span>日</span> Nihongo Dash</h1>
+  <div id="countdown">Trip day<br><b id="days-left">--</b> days left</div>
+</header>
+
+<main>
+  <nav>
+    <button data-view="today" class="active">Today</button>
+    <button data-view="path">Path</button>
+    <button data-view="browse">Browse</button>
+    <button data-view="grammar">Grammar</button>
+  </nav>
+
+  <!-- ===== TODAY ===== -->
+  <section id="view-today">
+    <div id="session-bar">
+      <div class="sb-top">
+        <span>Today's session</span>
+        <b><span id="sess-min">0</span> / 30 min</b>
+      </div>
+      <div class="bar"><i id="sess-fill"></i></div>
+      <div class="sb-sub">
+        <span>New today <b id="sess-new">0</b>/<b id="sess-quota">8</b></span>
+        <span>Reps <b id="sess-reps">0</b></span>
+        <span>Accuracy <b id="sess-acc">—</b></span>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat"><b id="stat-streak">0</b><span>Streak</span></div>
+      <div class="stat"><b id="stat-due">0</b><span>Due</span></div>
+      <div class="stat"><b id="stat-learned">0</b><span>Learned</span></div>
+      <div class="stat"><b id="stat-tier">1</b><span>Tier</span></div>
+    </div>
+
+    <div class="toggles">
+      <button id="mode-mc" class="active">Choice</button>
+      <button id="mode-type">Typing</button>
+      <button id="mode-recall">Recall</button>
+      <button id="mode-listen">Listen</button>
+    </div>
+    <div class="toggles">
+      <button id="opt-romaji">Show romaji</button>
+      <button id="opt-autoplay">Auto-play</button>
+      <button id="opt-reviewonly">Review only</button>
+    </div>
+    <div id="voice-warning" class="note" style="display:none;"></div>
+
+    <div class="card" id="flash-wrap">
+      <div id="flash-card">
+        <button id="speak-btn" title="Hear it (J)">🔊</button>
+        <div id="new-badge">New</div>
+        <div id="flash-front">—</div>
+        <div id="flash-sub"></div>
+        <div id="flash-back"></div>
+        <div id="flash-romaji"></div>
+        <div id="flash-hint">Tap card to flip</div>
+      </div>
+      <div id="mc-area" class="mc-options"></div>
+      <div id="type-area" style="display:none; width:100%;">
+        <input id="type-input" type="text" placeholder="Type the romaji…" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <div id="type-feedback"></div>
+      </div>
+      <div class="grade-row" id="grade-row" style="display:none;">
+        <button class="g-again" data-g="0">Again</button>
+        <button class="g-hard" data-g="1">Hard</button>
+        <button class="g-good" data-g="2">Good</button>
+        <button class="g-easy" data-g="3">Easy</button>
+      </div>
+    </div>
+
+    <div id="new-today-list"></div>
+  </section>
+
+  <!-- ===== PATH ===== -->
+  <section id="view-path" style="display:none;">
+    <h2 class="section-title">Your path to Aug 20</h2>
+    <div id="tier-list"></div>
+    <button id="unlock-btn">Unlock next tier early</button>
+    <div class="note" id="path-note"></div>
+  </section>
+
+  <!-- ===== BROWSE ===== -->
+  <section id="view-browse" style="display:none;">
+    <div class="filter-row" id="browse-filters"></div>
+    <div id="browse-list"></div>
+  </section>
+
+  <!-- ===== GRAMMAR ===== -->
+  <section id="view-grammar" style="display:none;">
+    <h2 class="section-title">Grammar bites</h2>
+    <div id="grammar-list"></div>
+  </section>
+
+  <button id="install-btn">Install Nihongo Dash</button>
+</main>
+
+<footer>Built for the Aug 20 push. Progress is saved on this device only.</footer>
+
+<script>
+/* Defined first: everything below reaches for it, including the voice setup. */
+const $ = (id) => document.getElementById(id);
+
+/* ==========================================================================
+   1. YOUR DECK — supplied by you, unmodified.
+   ========================================================================== */
+const DECK = [
+  // === HIRAGANA (Basic 46) ===
+  { id: "h1", category: "kana", front: "あ", back: "a", type: "mc" },
+  { id: "h2", category: "kana", front: "い", back: "i", type: "mc" },
+  { id: "h3", category: "kana", front: "う", back: "u", type: "mc" },
+  { id: "h4", category: "kana", front: "え", back: "e", type: "mc" },
+  { id: "h5", category: "kana", front: "お", back: "o", type: "mc" },
+  { id: "h6", category: "kana", front: "か", back: "ka", type: "mc" },
+  { id: "h7", category: "kana", front: "き", back: "ki", type: "mc" },
+  { id: "h8", category: "kana", front: "く", back: "ku", type: "mc" },
+  { id: "h9", category: "kana", front: "け", back: "ke", type: "mc" },
+  { id: "h10", category: "kana", front: "こ", back: "ko", type: "mc" },
+  { id: "h11", category: "kana", front: "さ", back: "sa", type: "mc" },
+  { id: "h12", category: "kana", front: "し", back: "shi", type: "mc" },
+  { id: "h13", category: "kana", front: "す", back: "su", type: "mc" },
+  { id: "h14", category: "kana", front: "せ", back: "se", type: "mc" },
+  { id: "h15", category: "kana", front: "そ", back: "so", type: "mc" },
+  { id: "h16", category: "kana", front: "た", back: "ta", type: "mc" },
+  { id: "h17", category: "kana", front: "ち", back: "chi", type: "mc" },
+  { id: "h18", category: "kana", front: "つ", back: "tsu", type: "mc" },
+  { id: "h19", category: "kana", front: "て", back: "te", type: "mc" },
+  { id: "h20", category: "kana", front: "と", back: "to", type: "mc" },
+  { id: "h21", category: "kana", front: "な", back: "na", type: "mc" },
+  { id: "h22", category: "kana", front: "に", back: "ni", type: "mc" },
+  { id: "h23", category: "kana", front: "ぬ", back: "nu", type: "mc" },
+  { id: "h24", category: "kana", front: "ね", back: "ne", type: "mc" },
+  { id: "h25", category: "kana", front: "の", back: "no", type: "mc" },
+  { id: "h26", category: "kana", front: "は", back: "ha", type: "mc" },
+  { id: "h27", category: "kana", front: "ひ", back: "hi", type: "mc" },
+  { id: "h28", category: "kana", front: "ふ", back: "fu", type: "mc" },
+  { id: "h29", category: "kana", front: "へ", back: "he", type: "mc" },
+  { id: "h30", category: "kana", front: "ほ", back: "ho", type: "mc" },
+  { id: "h31", category: "kana", front: "ま", back: "ma", type: "mc" },
+  { id: "h32", category: "kana", front: "み", back: "mi", type: "mc" },
+  { id: "h33", category: "kana", front: "む", back: "mu", type: "mc" },
+  { id: "h34", category: "kana", front: "め", back: "me", type: "mc" },
+  { id: "h35", category: "kana", front: "も", back: "mo", type: "mc" },
+  { id: "h36", category: "kana", front: "や", back: "ya", type: "mc" },
+  { id: "h37", category: "kana", front: "ゆ", back: "yu", type: "mc" },
+  { id: "h38", category: "kana", front: "よ", back: "yo", type: "mc" },
+  { id: "h39", category: "kana", front: "ら", back: "ra", type: "mc" },
+  { id: "h40", category: "kana", front: "り", back: "ri", type: "mc" },
+  { id: "h41", category: "kana", front: "る", back: "ru", type: "mc" },
+  { id: "h42", category: "kana", front: "れ", back: "re", type: "mc" },
+  { id: "h43", category: "kana", front: "ろ", back: "ro", type: "mc" },
+  { id: "h44", category: "kana", front: "わ", back: "wa", type: "mc" },
+  { id: "h45", category: "kana", front: "を", back: "wo", type: "mc" },
+  { id: "h46", category: "kana", front: "ん", back: "n", type: "mc" },
+
+  // === KATAKANA (Basic 46) ===
+  { id: "kt1", category: "kana", front: "ア", back: "a", type: "mc" },
+  { id: "kt2", category: "kana", front: "イ", back: "i", type: "mc" },
+  { id: "kt3", category: "kana", front: "ウ", back: "u", type: "mc" },
+  { id: "kt4", category: "kana", front: "エ", back: "e", type: "mc" },
+  { id: "kt5", category: "kana", front: "オ", back: "o", type: "mc" },
+  { id: "kt6", category: "kana", front: "カ", back: "ka", type: "mc" },
+  { id: "kt7", category: "kana", front: "キ", back: "ki", type: "mc" },
+  { id: "kt8", category: "kana", front: "ク", back: "ku", type: "mc" },
+  { id: "kt9", category: "kana", front: "ケ", back: "ke", type: "mc" },
+  { id: "kt10", category: "kana", front: "コ", back: "ko", type: "mc" },
+  { id: "kt11", category: "kana", front: "サ", back: "sa", type: "mc" },
+  { id: "kt12", category: "kana", front: "シ", back: "shi", type: "mc" },
+  { id: "kt13", category: "kana", front: "ス", back: "su", type: "mc" },
+  { id: "kt14", category: "kana", front: "セ", back: "se", type: "mc" },
+  { id: "kt15", category: "kana", front: "ソ", back: "so", type: "mc" },
+  { id: "kt16", category: "kana", front: "タ", back: "ta", type: "mc" },
+  { id: "kt17", category: "kana", front: "チ", back: "chi", type: "mc" },
+  { id: "kt18", category: "kana", front: "ツ", back: "tsu", type: "mc" },
+  { id: "kt19", category: "kana", front: "テ", back: "te", type: "mc" },
+  { id: "kt20", category: "kana", front: "ト", back: "to", type: "mc" },
+  { id: "kt21", category: "kana", front: "ナ", back: "na", type: "mc" },
+  { id: "kt22", category: "kana", front: "ニ", back: "ni", type: "mc" },
+  { id: "kt23", category: "kana", front: "ヌ", back: "nu", type: "mc" },
+  { id: "kt24", category: "kana", front: "ネ", back: "ne", type: "mc" },
+  { id: "kt25", category: "kana", front: "ノ", back: "no", type: "mc" },
+  { id: "kt26", category: "kana", front: "ハ", back: "ha", type: "mc" },
+  { id: "kt27", category: "kana", front: "ヒ", back: "hi", type: "mc" },
+  { id: "kt28", category: "kana", front: "フ", back: "fu", type: "mc" },
+  { id: "kt29", category: "kana", front: "ヘ", back: "he", type: "mc" },
+  { id: "kt30", category: "kana", front: "ホ", back: "ho", type: "mc" },
+  { id: "kt31", category: "kana", front: "マ", back: "ma", type: "mc" },
+  { id: "kt32", category: "kana", front: "ミ", back: "mi", type: "mc" },
+  { id: "kt33", category: "kana", front: "ム", back: "mu", type: "mc" },
+  { id: "kt34", category: "kana", front: "メ", back: "me", type: "mc" },
+  { id: "kt35", category: "kana", front: "モ", back: "mo", type: "mc" },
+  { id: "kt36", category: "kana", front: "ヤ", back: "ya", type: "mc" },
+  { id: "kt37", category: "kana", front: "ユ", back: "yu", type: "mc" },
+  { id: "kt38", category: "kana", front: "ヨ", back: "yo", type: "mc" },
+  { id: "kt39", category: "kana", front: "ラ", back: "ra", type: "mc" },
+  { id: "kt40", category: "kana", front: "リ", back: "ri", type: "mc" },
+  { id: "kt41", category: "kana", front: "ル", back: "ru", type: "mc" },
+  { id: "kt42", category: "kana", front: "レ", back: "re", type: "mc" },
+  { id: "kt43", category: "kana", front: "ロ", back: "ro", type: "mc" },
+  { id: "kt44", category: "kana", front: "ワ", back: "wa", type: "mc" },
+  { id: "kt45", category: "kana", front: "ヲ", back: "wo", type: "mc" },
+  { id: "kt46", category: "kana", front: "ン", back: "n", type: "mc" },
+
+  // === NUMBERS (1-10, 100, 1000) ===
+  { id: "n1", category: "vocab", front: "一 (いち)", back: "One (ichi)", type: "mc" },
+  { id: "n2", category: "vocab", front: "二 (に)", back: "Two (ni)", type: "mc" },
+  { id: "n3", category: "vocab", front: "三 (さん)", back: "Three (san)", type: "mc" },
+  { id: "n4", category: "vocab", front: "四 (よん / し)", back: "Four (yon / shi)", type: "mc" },
+  { id: "n5", category: "vocab", front: "五 (ご)", back: "Five (go)", type: "mc" },
+  { id: "n6", category: "vocab", front: "六 (ろく)", back: "Six (roku)", type: "mc" },
+  { id: "n7", category: "vocab", front: "七 (なな / しち)", back: "Seven (nana / shichi)", type: "mc" },
+  { id: "n8", category: "vocab", front: "八 (はち)", back: "Eight (hachi)", type: "mc" },
+  { id: "n9", category: "vocab", front: "九 (きゅう)", back: "Nine (kyuu)", type: "mc" },
+  { id: "n10", category: "vocab", front: "十 (じゅう)", back: "Ten (juu)", type: "mc" },
+  { id: "n11", category: "vocab", front: "百 (ひゃく)", back: "One Hundred (hyaku)", type: "mc" },
+  { id: "n12", category: "vocab", front: "千 (せん)", back: "One Thousand (sen)", type: "mc" },
+
+  // === COLORS ===
+  { id: "c1", category: "vocab", front: "赤 (あか)", back: "Red (aka)", type: "mc" },
+  { id: "c2", category: "vocab", front: "青 (あお)", back: "Blue (ao)", type: "mc" },
+  { id: "c3", category: "vocab", front: "緑 (みどり)", back: "Green (midori)", type: "mc" },
+  { id: "c4", category: "vocab", front: "黄色 (きいろ)", back: "Yellow (kiiro)", type: "mc" },
+  { id: "c5", category: "vocab", front: "黒 (くろ)", back: "Black (kuro)", type: "mc" },
+  { id: "c6", category: "vocab", front: "白 (しろ)", back: "White (shiro)", type: "mc" },
+
+  // === VOCABULARY (Tier 4: Core Pronouns & Time) ===
+  { id: "v20", category: "vocab", front: "私 (watashi)", back: "I / me", tier: 4 },
+  { id: "v21", category: "vocab", front: "今日 (kyou)", back: "Today", tier: 4 },
+  { id: "v22", category: "vocab", front: "明日 (ashita)", back: "Tomorrow", tier: 4 },
+  { id: "v23", category: "vocab", front: "今 (ima)", back: "Now", tier: 4 },
+
+  // === GRAMMAR (Tier 4: The Absolute Basics) ===
+  { id: "g6", category: "grammar", title: "State of Being", jp: "[A] は [B] です (wa ... desu)", en: "[A] is [B]. (e.g., Watashi wa Amerika-jin desu = I am American)", tier: 4 },
+  { id: "g7", category: "grammar", title: "Asking Questions", jp: "[Sentence] か？ (ka?)", en: "Turns a sentence into a question. (e.g., Sou desu ka? = Is that so?)", tier: 4 },
+  { id: "g8", category: "grammar", title: "Possession / 's", jp: "[A] の [B] (no)", en: "[A]'s [B]. (e.g., Watashi no kaban = My bag)", tier: 4 },
+
+  // === VOCABULARY (Tier 5: High-Frequency Adjectives) ===
+  { id: "v24", category: "vocab", front: "大きい (ookii)", back: "Big", tier: 5 },
+  { id: "v25", category: "vocab", front: "小さい (chiisai)", back: "Small", tier: 5 },
+  { id: "v26", category: "vocab", front: "高い (takai)", back: "Expensive / High", tier: 5 },
+  { id: "v27", category: "vocab", front: "安い (yasui)", back: "Cheap", tier: 5 },
+  { id: "v28", category: "vocab", front: "美味しい (oishii)", back: "Delicious", tier: 5 },
+  { id: "v29", category: "vocab", front: "良い (ii)", back: "Good", tier: 5 },
+
+  // === GRAMMAR (Tier 5: Existence & Adjectives) ===
+  { id: "g9", category: "grammar", title: "Inanimate Existence", jp: "[Noun] があります (ga arimasu)", en: "There is / I have [Noun] (for objects/plants)", tier: 5 },
+  { id: "g10", category: "grammar", title: "Animate Existence", jp: "[Noun] がいます (ga imasu)", en: "There is / I have [Noun] (for people/animals)", tier: 5 },
+  { id: "g11", category: "grammar", title: "Adjective Sentences", jp: "[Noun] は [Adjective] です (wa ... desu)", en: "[Noun] is [Adjective]. (e.g., Kore wa takai desu = This is expensive)", tier: 5 },
+
+  // === VOCABULARY (Tier 6: Essential Action Verbs) ===
+  { id: "v30", category: "vocab", front: "食べる (taberu)", back: "To eat", tier: 6 },
+  { id: "v31", category: "vocab", front: "飲む (nomu)", back: "To drink", tier: 6 },
+  { id: "v32", category: "vocab", front: "行く (iku)", back: "To go", tier: 6 },
+  { id: "v33", category: "vocab", front: "来る (kuru)", back: "To come", tier: 6 },
+  { id: "v34", category: "vocab", front: "する (suru)", back: "To do", tier: 6 },
+  { id: "v35", category: "vocab", front: "見る (miru)", back: "To see / watch", tier: 6 },
+  { id: "v36", category: "vocab", front: "買う (kau)", back: "To buy", tier: 6 },
+
+  // === GRAMMAR (Tier 6: Action Particles & Past Tense) ===
+  { id: "g12", category: "grammar", title: "Direct Object Particle", jp: "[Object] を [Verb] (o)", en: "Marks the object of an action. (e.g., Sushi o taberu = Eat sushi)", tier: 6 },
+  { id: "g13", category: "grammar", title: "Direction Particle", jp: "[Place] に行く (ni iku)", en: "Going TO a place. (e.g., Toukyou ni iku = Go to Tokyo)", tier: 6 },
+  { id: "g14", category: "grammar", title: "Polite Present/Future", jp: "[Verb stem] ます (masu)", en: "Polite verb ending. (e.g., Tabemasu = I eat / I will eat)", tier: 6 },
+  { id: "g15", category: "grammar", title: "Polite Past Tense", jp: "[Verb stem] ました (mashita)", en: "Completed action. (e.g., Kaimashita = I bought it)", tier: 6 }
+];
+
+/* ==========================================================================
+   2. NOUN PACK — added by Claude, not from your original list.
+      Your deck has verbs and adjectives but almost no concrete nouns, so the
+      grammar patterns had nothing to attach to. These are the objects and
+      places that make combination drills possible. Delete this array if you'd
+      rather supply your own — everything below degrades gracefully.
+   ========================================================================== */
+const NOUN_PACK = [
+  { id: "x1",  category: "vocab", front: "これ (kore)",   back: "This",            tier: 5, kind: "thing" },
+  { id: "x2",  category: "vocab", front: "それ (sore)",   back: "That",            tier: 5, kind: "thing" },
+  { id: "x3",  category: "vocab", front: "水 (mizu)",     back: "Water",           tier: 5, kind: "drink" },
+  { id: "x4",  category: "vocab", front: "お茶 (ocha)",   back: "Tea",             tier: 5, kind: "drink" },
+  { id: "x5",  category: "vocab", front: "ご飯 (gohan)",  back: "Rice / meal",     tier: 5, kind: "food"  },
+  { id: "x6",  category: "vocab", front: "駅 (eki)",      back: "Station",         tier: 5, kind: "place" },
+  { id: "x7",  category: "vocab", front: "ホテル (hoteru)", back: "Hotel",         tier: 5, kind: "place" },
+  { id: "x8",  category: "vocab", front: "トイレ (toire)", back: "Toilet",         tier: 5, kind: "place" },
+  { id: "x9",  category: "vocab", front: "店 (mise)",     back: "Shop",            tier: 6, kind: "place" },
+  { id: "x10", category: "vocab", front: "切符 (kippu)",  back: "Ticket",          tier: 6, kind: "thing" },
+  { id: "x11", category: "vocab", front: "電車 (densha)", back: "Train",           tier: 6, kind: "thing" },
+  { id: "x12", category: "vocab", front: "空港 (kuukou)", back: "Airport",         tier: 6, kind: "place" },
+  { id: "x13", category: "vocab", front: "お金 (okane)",  back: "Money",           tier: 6, kind: "thing" },
+  { id: "x14", category: "vocab", front: "人 (hito)",     back: "Person",          tier: 6, kind: "animate" },
+  { id: "x15", category: "vocab", front: "猫 (neko)",     back: "Cat",             tier: 6, kind: "animate" }
+];
+
+/* ==========================================================================
+   3. PHRASE BUILDER — combination drills generated from your grammar patterns.
+      Each template names the grammar rule it exercises, so a phrase card is
+      always traceable back to the pattern in your Grammar tab.
+   ========================================================================== */
+const PHRASE_TEMPLATES = [
+  // Tier 5 — plug one word into one slot.
+  { id:"p1",  tier:5, rule:"g11", jp:"高いです",        ro:"takai desu",          en:"It's expensive." },
+  { id:"p2",  tier:5, rule:"g11", jp:"安いです",        ro:"yasui desu",          en:"It's cheap." },
+  { id:"p3",  tier:5, rule:"g11", jp:"美味しいです",    ro:"oishii desu",         en:"It's delicious." },
+  { id:"p4",  tier:5, rule:"g11", jp:"これは大きいです", ro:"kore wa ookii desu",  en:"This is big." },
+  { id:"p5",  tier:5, rule:"g11", jp:"それは小さいです", ro:"sore wa chiisai desu", en:"That is small." },
+  { id:"p6",  tier:5, rule:"g9",  jp:"水があります",     ro:"mizu ga arimasu",     en:"There is water." },
+  { id:"p7",  tier:5, rule:"g9",  jp:"お茶があります",   ro:"ocha ga arimasu",     en:"There is tea." },
+  { id:"p8",  tier:5, rule:"g10", jp:"人がいます",       ro:"hito ga imasu",       en:"There's a person." },
+  { id:"p9",  tier:5, rule:"g10", jp:"猫がいます",       ro:"neko ga imasu",       en:"There's a cat." },
+  { id:"p10", tier:5, rule:"g8",  jp:"私のお金",         ro:"watashi no okane",    en:"My money." },
+  { id:"p11", tier:5, rule:"g8",  jp:"私の切符",         ro:"watashi no kippu",    en:"My ticket." },
+
+  // Tier 6 — particle + conjugated verb, two moving parts.
+  { id:"p12", tier:6, rule:"g12", jp:"ご飯を食べます",   ro:"gohan o tabemasu",    en:"I eat a meal." },
+  { id:"p13", tier:6, rule:"g12", jp:"水を飲みます",     ro:"mizu o nomimasu",     en:"I drink water." },
+  { id:"p14", tier:6, rule:"g12", jp:"お茶を飲みます",   ro:"ocha o nomimasu",     en:"I drink tea." },
+  { id:"p15", tier:6, rule:"g12", jp:"切符を買います",   ro:"kippu o kaimasu",     en:"I buy a ticket." },
+  { id:"p16", tier:6, rule:"g13", jp:"駅に行きます",     ro:"eki ni ikimasu",      en:"I go to the station." },
+  { id:"p17", tier:6, rule:"g13", jp:"ホテルに行きます", ro:"hoteru ni ikimasu",   en:"I go to the hotel." },
+  { id:"p18", tier:6, rule:"g13", jp:"空港に行きます",   ro:"kuukou ni ikimasu",   en:"I go to the airport." },
+  { id:"p19", tier:6, rule:"g15", jp:"ご飯を食べました", ro:"gohan o tabemashita", en:"I ate a meal." },
+  { id:"p20", tier:6, rule:"g15", jp:"切符を買いました", ro:"kippu o kaimashita",  en:"I bought a ticket." },
+  { id:"p21", tier:6, rule:"g15", jp:"駅に行きました",   ro:"eki ni ikimashita",   en:"I went to the station." },
+
+  // Tier 7 — full survival sentences: question particle + everything above.
+  { id:"p22", tier:7, rule:"g7",  jp:"これはいくらですか",       ro:"kore wa ikura desu ka",     en:"How much is this?" },
+  { id:"p23", tier:7, rule:"g7",  jp:"駅はどこですか",           ro:"eki wa doko desu ka",       en:"Where is the station?" },
+  { id:"p24", tier:7, rule:"g7",  jp:"トイレはどこですか",       ro:"toire wa doko desu ka",     en:"Where is the toilet?" },
+  { id:"p25", tier:7, rule:"g7",  jp:"英語が話せますか",         ro:"eigo ga hanasemasu ka",     en:"Do you speak English?" },
+  { id:"p26", tier:7, rule:"g7",  jp:"これをください",           ro:"kore o kudasai",            en:"This one, please." },
+  { id:"p27", tier:7, rule:"g6",  jp:"すみません",               ro:"sumimasen",                 en:"Excuse me / sorry." },
+  { id:"p28", tier:7, rule:"g6",  jp:"ありがとうございます",     ro:"arigatou gozaimasu",        en:"Thank you very much." },
+  { id:"p29", tier:7, rule:"g6",  jp:"お願いします",             ro:"onegaishimasu",             en:"Please (I request it)." },
+  { id:"p30", tier:7, rule:"g6",  jp:"分かりません",             ro:"wakarimasen",               en:"I don't understand." },
+  { id:"p31", tier:7, rule:"g6",  jp:"大丈夫です",               ro:"daijoubu desu",             en:"It's fine / I'm okay." },
+  { id:"p32", tier:7, rule:"g6",  jp:"ちょっと待ってください",   ro:"chotto matte kudasai",      en:"Please wait a moment." }
+];
+
+/* ==========================================================================
+   4. TIER MAP
+   ========================================================================== */
+const TIERS = {
+  1: { name:"Hiragana",        desc:"The 46 core hiragana. Everything else stands on this." },
+  2: { name:"Katakana",        desc:"The 46 katakana — menus, station signs, loanwords." },
+  3: { name:"Numbers & colors", desc:"Prices, platforms, quantities, describing things." },
+  4: { name:"Pronouns & time",  desc:"First words plus は / の / か — your first real sentences." },
+  5: { name:"Adjectives & things", desc:"Describe and point. One word in one slot." },
+  6: { name:"Verbs & actions",  desc:"を / に particles, ます and ました. Two moving parts." },
+  7: { name:"Survival phrases", desc:"Full sentences you'll actually say out loud in Japan." }
+};
+const MAX_TIER = 7;
+
+/* Tier is derived, never written back into your data. */
+function tierOf(card){
+  if(typeof card.tier === 'number') return card.tier;
+  if(/^h\d+$/.test(card.id))  return 1;
+  if(/^kt\d+$/.test(card.id)) return 2;
+  if(/^[nc]\d+$/.test(card.id)) return 3;
+  return 4;
+}
+
+/* ==========================================================================
+   5. TEXT PARSING — split "私 (watashi)" and "Red (aka)" into parts so the
+      prompt can hide the romaji and typing can accept sane answers.
+   ========================================================================== */
+function splitParen(s){
+  const m = String(s).match(/^(.*?)\s*[(（](.*?)[)）]\s*$/);
+  return m ? { main:m[1].trim(), paren:m[2].trim() } : { main:String(s).trim(), paren:null };
+}
+function variants(s){
+  return String(s).split(/\s*[\/、]\s*/).map(v => v.trim().toLowerCase()).filter(Boolean);
+}
+
+/* Build a normalized study card from any deck entry. */
+function toCard(src){
+  if(src.__phrase){
+    return {
+      id: src.id, category:'phrase', tier: src.tier, rule: src.rule,
+      prompt: src.jp, romaji: src.ro, answer: src.en,
+      accepts: [...variants(src.en.replace(/[.?!]/g,'')), ...variants(src.ro)],
+      label: 'phrase'
+    };
+  }
+  const f = splitParen(src.front);
+  const b = splitParen(src.back);
+  const accepts = [...variants(b.main)];
+  if(b.paren) accepts.push(...variants(b.paren));
+  if(f.paren) accepts.push(...variants(f.paren));
+  return {
+    id: src.id, category: src.category, tier: tierOf(src),
+    prompt: f.main,
+    romaji: f.paren || (src.category === 'kana' ? b.main : null),
+    answer: b.main,
+    accepts,
+    label: src.category === 'kana' ? 'kana' : 'vocab'
+  };
+}
+
+/* The full studiable pool: your deck + noun pack + generated phrases.
+   Grammar entries are reference material, never flashcards. */
+const ALL_SOURCES = [
+  ...DECK.filter(c => c.category !== 'grammar'),
+  ...NOUN_PACK,
+  ...PHRASE_TEMPLATES.map(p => ({ ...p, __phrase:true }))
+];
+const CARDS = ALL_SOURCES.map(toCard);
+const BY_ID = Object.fromEntries(CARDS.map(c => [c.id, c]));
+const GRAMMAR = DECK.filter(c => c.category === 'grammar');
+
+/* ==========================================================================
+   6. SPACED REPETITION — leveled boxes, unchanged from your build.
+   ========================================================================== */
+/* Boxes 0-3 are the in-session learning ladder: a card you just met comes
+   back several times before it graduates. Boxes 4+ are real retention.
+   Nothing here exceeds a week — there are only ~30 days until the trip. */
+const boxIntervals = [
+  0,                        // 0: immediately
+  60 * 1000,                // 1: 1 min
+  5 * 60 * 1000,            // 2: 5 min
+  25 * 60 * 1000,           // 3: 25 min  <- graduates the session
+  6 * 60 * 60 * 1000,       // 4: 6 hours
+  24 * 60 * 60 * 1000,      // 5: 1 day
+  3 * 24 * 60 * 60 * 1000,  // 6: 3 days
+  7 * 24 * 60 * 60 * 1000   // 7: 7 days
+];
+const GRADUATED = 3;   // survived the in-session ladder
+const RETAINED  = 5;   // survived at least a day
+
+const STORE_KEY = 'nihongo-dash-state-v2';
+const DEFAULTS = {
+  cards:{}, streak:0, lastStudyDay:null, tripDate:'2026-08-20',
+  unlockedTier:1, quota:12, session:null, recent:[], seenOrder:[], quotaAdjustedDay:null
+};
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw) return Object.assign({}, DEFAULTS, JSON.parse(raw));
+  }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULTS));
+}
+function saveState(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){} }
+let state = loadState();
+
+function cardState(id){
+  if(!state.cards[id]) state.cards[id] = { box:0, due:0, seen:false };
+  return state.cards[id];
+}
+const isSeen = (id) => !!(state.cards[id] && state.cards[id].seen);
+const unlockedCards = () => CARDS.filter(c => c.tier <= state.unlockedTier);
+const dueCards = () => unlockedCards().filter(c => isSeen(c.id) && cardState(c.id).due <= Date.now());
+const newCards = () => unlockedCards().filter(c => !isSeen(c.id)).sort((a,b) => a.tier - b.tier);
+
+/* ==========================================================================
+   7. DAY / SESSION
+   ========================================================================== */
+const todayKey = () => { const d=new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; };
+const SESSION_TARGET_MS = 30 * 60 * 1000;
+
+function session(){
+  if(!state.session || state.session.day !== todayKey()){
+    state.session = { day: todayKey(), activeMs:0, reps:0, hits:0, newIds:[] };
+    adaptQuota();
+  }
+  return state.session;
+}
+
+function registerStudyToday(){
+  const t = todayKey();
+  if(state.lastStudyDay === t) return;
+  const y = new Date(Date.now() - 86400000);
+  const yKey = `${y.getFullYear()}-${y.getMonth()+1}-${y.getDate()}`;
+  state.streak = (state.lastStudyDay === yKey) ? state.streak + 1 : 1;
+  state.lastStudyDay = t;
+}
+
+/* Session clock only advances while the tab is visible and you're interacting. */
+let lastInteraction = Date.now();
+['click','keydown','touchstart'].forEach(ev =>
+  document.addEventListener(ev, () => { lastInteraction = Date.now(); }, {passive:true})
+);
+setInterval(() => {
+  const s = session();
+  const idle = Date.now() - lastInteraction > 90000;
+  if(!document.hidden && !idle && s.activeMs < SESSION_TARGET_MS * 2){
+    s.activeMs += 1000;
+    if(s.activeMs % 15000 === 0) saveState();
+    renderSession();
+  }
+}, 1000);
+
+/* ==========================================================================
+   8. PROGRESSION — mastery, unlocking, adaptive quota
+   ========================================================================== */
+function tierCards(t){ return CARDS.filter(c => c.tier === t); }
+function tierMastery(t){
+  const cs = tierCards(t);
+  if(!cs.length) return 1;
+  const solid = cs.filter(c => isSeen(c.id) && cardState(c.id).box >= GRADUATED).length;
+  return solid / cs.length;
+}
+const UNLOCK_AT = 0.8;
+function canUnlockNext(){
+  return state.unlockedTier < MAX_TIER && tierMastery(state.unlockedTier) >= UNLOCK_AT;
+}
+function autoUnlock(){
+  while(canUnlockNext()){ state.unlockedTier++; }
+}
+
+/* Recent accuracy drives how much new material you get tomorrow. */
+function recentAccuracy(){
+  const r = state.recent || [];
+  if(r.length < 12) return null;
+  return r.reduce((a,b) => a+b, 0) / r.length;
+}
+/* Runs once when a new day's session opens — never mid-session, or a good
+   run would ratchet the quota to the cap within a few minutes. */
+function adaptQuota(){
+  if(state.quotaAdjustedDay === todayKey()) return;
+  state.quotaAdjustedDay = todayKey();
+  const acc = recentAccuracy();
+  if(acc === null) return;
+  if(acc >= 0.85 && state.quota < 24) state.quota += 3;
+  else if(acc < 0.65 && state.quota > 5) state.quota -= 3;
+}
+
+/* ==========================================================================
+   8b. SPEECH — browser TTS. Listening is the channel flashcards can't reach,
+       and it's the one you'll lean on hardest in an actual conversation.
+   ========================================================================== */
+const synth = window.speechSynthesis;
+let jaVoice = null;
+let voicesReady = false;
+
+function pickJapaneseVoice(){
+  if(!synth) return null;
+  const voices = synth.getVoices();
+  if(!voices.length) return null;
+  const ja = voices.filter(v => /^ja(-|_|$)/i.test(v.lang || ''));
+  if(!ja.length) return null;
+  // Prefer a local voice — remote ones lag and fail offline on the plane.
+  return ja.find(v => v.localService) || ja[0];
+}
+
+function initVoices(){
+  jaVoice = pickJapaneseVoice();
+  voicesReady = true;
+  const warn = $('voice-warning');
+  const btn = $('speak-btn');
+  if(!synth){
+    btn.disabled = true; $('mode-listen').disabled = true;
+    warn.style.display = 'block';
+    warn.textContent = 'This browser has no speech synthesis, so audio and Listen mode are unavailable.';
+  } else if(!jaVoice){
+    btn.disabled = true; $('mode-listen').disabled = true;
+    warn.style.display = 'block';
+    warn.textContent = 'No Japanese voice installed. On macOS add one in System Settings → Accessibility → Spoken Content → System Voice → Manage Voices (Japanese). On iOS: Settings → Accessibility → Spoken Content → Voices.';
+  } else {
+    btn.disabled = false; $('mode-listen').disabled = false;
+    warn.style.display = 'none';
+  }
+}
+
+if(synth){
+  initVoices();
+  // Voice lists populate asynchronously in most browsers.
+  synth.addEventListener?.('voiceschanged', initVoices);
+  if(synth.onvoiceschanged === null) synth.onvoiceschanged = initVoices;
+}
+
+function speak(text){
+  if(!synth || !jaVoice || !text) return;
+  try{
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.voice = jaVoice;
+    u.lang = jaVoice.lang || 'ja-JP';
+    u.rate = 0.85;   // native pace is too fast to decompose as a beginner
+    u.pitch = 1;
+    const btn = $('speak-btn');
+    u.onstart = () => btn.classList.add('speaking');
+    u.onend = u.onerror = () => btn.classList.remove('speaking');
+    synth.speak(u);
+  }catch(e){ /* never let audio break a review */ }
+}
+
+/* Only the Japanese side is ever spoken — never the English answer. */
+const speakableOf = (c) => c && c.prompt ? c.prompt : null;
+
+/* ==========================================================================
+   9. CARD SELECTION — reviews first, new material drip-fed between them.
+   ========================================================================== */
+let mode = 'mc';
+let showRomaji = false;
+let reviewOnly = false;
+let autoplay = false;
+let current = null;
+let currentIsNew = false;
+let isExtraPractice = false;
+let repsSinceNew = 0;
+
+function pickNext(){
+  const s = session();
+  isExtraPractice = false;
+  const due = dueCards();
+  const fresh = newCards();
+  const quotaLeft = Math.max(0, state.quota - s.newIds.length);
+
+  const wantNew = !reviewOnly && fresh.length > 0 && quotaLeft > 0 &&
+                  (due.length === 0 || repsSinceNew >= 4);
+
+  if(wantNew){
+    currentIsNew = true;
+    repsSinceNew = 0;
+    return fresh[0];
+  }
+  if(due.length){
+    currentIsNew = false;
+    repsSinceNew++;
+    return due[Math.floor(Math.random() * due.length)];
+  }
+  if(!reviewOnly && fresh.length && quotaLeft > 0){
+    currentIsNew = true;
+    repsSinceNew = 0;
+    return fresh[0];
+  }
+
+  /* Daily goal met but the 30 minutes aren't up: keep drilling the shakiest
+     cards you've already met rather than dead-ending the session. */
+  const s2 = session();
+  if(s2.activeMs < SESSION_TARGET_MS){
+    const practice = unlockedCards()
+      .filter(c => isSeen(c.id))
+      .sort((a,b) => cardState(a.id).box - cardState(b.id).box)
+      .slice(0, 25);
+    if(practice.length){
+      currentIsNew = false;
+      isExtraPractice = true;
+      return practice[Math.floor(Math.random() * practice.length)];
+    }
+  }
+  return null;
+}
+
+/* Distractors come from the same category so choices stay plausible. */
+function distractorsFor(card, n){
+  const sameKind = CARDS.filter(c => c.id !== card.id && c.category === card.category && c.tier <= state.unlockedTier);
+  const pool = (sameKind.length >= n ? sameKind : CARDS.filter(c => c.id !== card.id)).slice();
+  const out = [];
+  while(out.length < n && pool.length) out.push(pool.splice(Math.floor(Math.random()*pool.length), 1)[0]);
+  return out;
+}
+
+/* ==========================================================================
+   10. RENDERING
+   ========================================================================== */
+function renderCard(){
+  const back = $('flash-back'), rom = $('flash-romaji'), grade = $('grade-row'),
+        hint = $('flash-hint'), mcArea = $('mc-area'), typeArea = $('type-area');
+  back.style.display = 'none'; rom.style.display = 'none';
+  grade.style.display = 'none';
+  $('type-feedback').textContent = ''; $('type-input').value = '';
+  mcArea.innerHTML = '';
+
+  current = pickNext();
+  $('new-badge').style.display = current && currentIsNew ? 'block' : 'none';
+
+  if(!current){
+    const anyLeft = newCards().length > 0;
+    $('flash-front').className = '';
+    $('flash-front').innerHTML = `<div class="done-msg"><div class="big">✓</div></div>`;
+    $('flash-sub').textContent = reviewOnly ? 'No reviews due' :
+      (anyLeft ? `Daily quota done — ${state.quota} new cards absorbed` : 'Everything unlocked is caught up');
+    hint.textContent = anyLeft && !reviewOnly ? 'Come back tomorrow, or unlock the next tier in Path.' : '';
+    typeArea.style.display = 'none';
+    return;
+  }
+
+  const c = current;
+  const listening = mode === 'listen' && jaVoice && !currentIsNew;
+
+  $('flash-front').className = c.category === 'phrase' ? 'phrase' : '';
+  if(listening){
+    // Hide the writing — the audio is the whole prompt.
+    $('flash-front').className = '';
+    $('flash-front').innerHTML = '<span id="listen-face">🎧</span>';
+  } else {
+    $('flash-front').textContent = c.prompt;
+  }
+  $('flash-sub').textContent = `${c.label} · tier ${c.tier}` + (isExtraPractice ? ' · extra practice' : '');
+  $('speak-btn').disabled = !jaVoice;
+  if(showRomaji && extraRomaji(c)){ rom.textContent = extraRomaji(c); rom.style.display = 'block'; }
+
+  // A brand-new card is taught, not tested: show the answer up front.
+  if(currentIsNew){
+    back.textContent = c.answer; back.style.display = 'block';
+    const r = extraRomaji(c);
+    if(r){ rom.textContent = r; rom.style.display = 'block'; }
+    hint.textContent = 'New — read it, say it aloud, then grade how well it stuck.';
+    typeArea.style.display = 'none';
+    grade.style.display = 'flex';
+    if(autoplay) speak(speakableOf(c));
+    return;
+  }
+
+  if(mode === 'mc' || listening){
+    typeArea.style.display = 'none';
+    hint.textContent = listening ? 'Listen, then choose the meaning' : 'Choose the meaning';
+    const opts = [c, ...distractorsFor(c, 3)].sort(() => Math.random() - 0.5);
+    opts.forEach(o => {
+      const b = document.createElement('button');
+      b.textContent = o.answer;
+      b.onclick = () => answerMc(o.id === c.id, b, mcArea);
+      mcArea.appendChild(b);
+    });
+    // In Listen mode the audio IS the prompt, so it always plays.
+    if(listening || autoplay) speak(speakableOf(c));
+    return;
+  }
+
+  if(autoplay) speak(speakableOf(c));
+
+  if(mode === 'type'){
+    typeArea.style.display = 'block';
+    hint.textContent = 'Type the romaji or the meaning, then press Enter';
+    $('type-input').focus();
+  } else { // recall
+    typeArea.style.display = 'none';
+    hint.textContent = 'Say it out loud, then tap to check';
+  }
+}
+
+/* Kana answers are already romaji — don't print the same string twice. */
+function extraRomaji(c){
+  if(!c.romaji) return null;
+  return c.romaji.toLowerCase() === c.answer.toLowerCase() ? null : c.romaji;
+}
+
+function reveal(){
+  // Listen mode hid the writing — show it now so ear and eye connect.
+  if(mode === 'listen'){
+    $('flash-front').className = current.category === 'phrase' ? 'phrase' : '';
+    $('flash-front').textContent = current.prompt;
+  }
+  $('flash-back').textContent = current.answer;
+  $('flash-back').style.display = 'block';
+  const r = extraRomaji(current);
+  if(r){ $('flash-romaji').textContent = r; $('flash-romaji').style.display = 'block'; }
+  $('grade-row').style.display = 'flex';
+}
+
+function answerMc(correct, btn, area){
+  [...area.children].forEach(b => b.disabled = true);
+  btn.classList.add(correct ? 'correct' : 'wrong');
+  reveal();
+  if(!correct) grade(0);
+}
+
+function checkTyped(){
+  if(!current) return;
+  const val = $('type-input').value.trim().toLowerCase();
+  if(!val) return;
+  const correct = current.accepts.includes(val);
+  const fb = $('type-feedback');
+  fb.textContent = correct ? 'Correct' : `Not quite — ${current.answer}${current.romaji ? ' ('+current.romaji+')' : ''}`;
+  fb.className = correct ? 'ok' : 'no';
+  reveal();
+  if(!correct) grade(0);
+}
+
+function grade(g){
+  if(!current) return;
+  const cs = cardState(current.id);
+  const s = session();
+  const wasNew = !cs.seen;
+
+  if(wasNew){
+    cs.seen = true;
+    if(!s.newIds.includes(current.id)) s.newIds.push(current.id);
+    if(!state.seenOrder.includes(current.id)) state.seenOrder.push(current.id);
+  } else {
+    s.reps++;
+    if(g > 0) s.hits++;
+    state.recent.push(g > 0 ? 1 : 0);
+    if(state.recent.length > 40) state.recent.shift();
+  }
+
+  // Again resets, Hard holds position, Good steps up, Easy skips a step.
+  const step = { 0:null, 1:0, 2:1, 3:2 }[g];
+  cs.box = (step === null) ? 0 : Math.min(cs.box + step, boxIntervals.length - 1);
+  cs.due = Date.now() + boxIntervals[cs.box];
+
+  registerStudyToday();
+  autoUnlock();
+  saveState();
+  renderAll();
+  renderCard();
+}
+
+function renderSession(){
+  const s = session();
+  const mins = Math.floor(s.activeMs / 60000);
+  $('sess-min').textContent = mins;
+  $('sess-fill').style.width = Math.min(100, (s.activeMs / SESSION_TARGET_MS) * 100) + '%';
+  $('sess-new').textContent = s.newIds.length;
+  $('sess-quota').textContent = state.quota;
+  $('sess-reps').textContent = s.reps;
+  $('sess-acc').textContent = s.reps >= 5 ? Math.round((s.hits / s.reps) * 100) + '%' : '—';
+}
+
+function renderStats(){
+  $('stat-streak').textContent = state.streak || 0;
+  $('stat-due').textContent = dueCards().length;
+  $('stat-learned').textContent = Object.entries(state.cards).filter(([,v]) => v.seen && v.box >= RETAINED).length;
+  $('stat-tier').textContent = state.unlockedTier;
+}
+
+function renderNewToday(){
+  const s = session();
+  const wrap = $('new-today-list');
+  if(!s.newIds.length){ wrap.innerHTML = ''; return; }
+  const rows = s.newIds.map(id => BY_ID[id]).filter(Boolean).map(c =>
+    `<div class="item"><div class="jp">${c.prompt}</div><div class="en">${c.answer}</div>${extraRomaji(c) ? `<div class="ro">${extraRomaji(c)}</div>` : ''}</div>`
+  ).join('');
+  wrap.innerHTML = `<h2 class="section-title">Learned today · ${s.newIds.length}</h2>${rows}`;
+}
+
+function renderPath(){
+  const list = $('tier-list');
+  list.innerHTML = '';
+  for(let t = 1; t <= MAX_TIER; t++){
+    const unlocked = t <= state.unlockedTier;
+    const pct = Math.round(tierMastery(t) * 100);
+    const done = pct >= UNLOCK_AT * 100;
+    const el = document.createElement('div');
+    el.className = 'tier' + (unlocked ? '' : ' locked') + (t === state.unlockedTier ? ' current' : '');
+    el.innerHTML = `
+      <div class="tier-head">
+        <h3>${t}. ${TIERS[t].name}</h3>
+        <span class="badge ${!unlocked ? 'b-locked' : done ? 'b-done' : 'b-open'}">
+          ${!unlocked ? 'locked' : done ? 'solid' : 'open'}
+        </span>
+      </div>
+      <div class="desc">${TIERS[t].desc}</div>
+      <div class="bar"><i style="width:${unlocked ? pct : 0}%"></i></div>
+      <div class="desc" style="margin:7px 0 0;">${tierCards(t).length} cards · ${unlocked ? pct + '% solid' : 'locked'}</div>`;
+    list.appendChild(el);
+  }
+  const btn = $('unlock-btn');
+  const atMax = state.unlockedTier >= MAX_TIER;
+  btn.disabled = atMax;
+  btn.textContent = atMax ? 'All tiers unlocked' : `Unlock tier ${state.unlockedTier + 1}: ${TIERS[state.unlockedTier + 1].name}`;
+  $('path-note').textContent =
+    `A tier unlocks on its own once ${Math.round(UNLOCK_AT*100)}% of the previous tier is solid (box 2+). ` +
+    `Moving faster than that? Unlock early — nothing is lost, and reviews from earlier tiers keep coming regardless. ` +
+    `Your daily new-card quota is ${state.quota}, tuned automatically from your recent accuracy.`;
+}
+
+let browseFilter = 'all';
+function renderBrowse(){
+  const filters = [
+    ['all','All'], ['kana','Kana'], ['vocab','Vocab'], ['phrase','Phrases']
+  ];
+  $('browse-filters').innerHTML = filters.map(([k,label]) =>
+    `<button data-f="${k}" class="${browseFilter===k?'active':''}">${label}</button>`).join('');
+  $('browse-filters').querySelectorAll('button').forEach(b =>
+    b.onclick = () => { browseFilter = b.dataset.f; renderBrowse(); });
+
+  const items = CARDS.filter(c => browseFilter === 'all' || c.category === browseFilter);
+  const byTier = {};
+  items.forEach(c => (byTier[c.tier] = byTier[c.tier] || []).push(c));
+
+  $('browse-list').innerHTML = Object.keys(byTier).sort((a,b)=>a-b).map(t => {
+    const locked = Number(t) > state.unlockedTier;
+    const rows = byTier[t].map(c => {
+      const cs = state.cards[c.id];
+      const dot = cs && cs.seen ? (cs.box >= 3 ? '🟢' : cs.box >= 2 ? '🟡' : '🔴') : '⚪️';
+      return `<div class="item">
+        <div class="jp">${dot} ${c.prompt}</div>
+        <div class="en">${c.answer}</div>
+        ${extraRomaji(c) ? `<div class="ro">${extraRomaji(c)}</div>` : ''}
+      </div>`;
+    }).join('');
+    return `<h2 class="section-title">Tier ${t} · ${TIERS[t].name}${locked ? ' (locked)' : ''}</h2>${rows}`;
+  }).join('');
+}
+
+function renderGrammar(){
+  const list = $('grammar-list');
+  if(!GRAMMAR.length){
+    list.innerHTML = `<div class="note">No grammar entries in the deck yet.</div>`;
+    return;
+  }
+  list.innerHTML = GRAMMAR.sort((a,b) => tierOf(a) - tierOf(b)).map(g => {
+    const linked = PHRASE_TEMPLATES.filter(p => p.rule === g.id);
+    const examples = linked.length
+      ? `<div class="ro" style="margin-top:8px;">Drilled by ${linked.length} phrase${linked.length>1?'s':''}: ${linked.slice(0,3).map(p=>p.jp).join('、')}${linked.length>3?'…':''}</div>`
+      : '';
+    const locked = tierOf(g) > state.unlockedTier;
+    return `<div class="item" style="${locked ? 'opacity:.5;' : ''}">
+      <h3>${g.title} ${locked ? '· locked' : ''}</h3>
+      <div class="jp">${g.jp}</div>
+      <div class="en">${g.en}</div>
+      ${examples}
+    </div>`;
+  }).join('');
+}
+
+function renderAll(){
+  renderSession(); renderStats(); renderNewToday();
+  renderPath(); renderBrowse(); renderGrammar(); updateCountdown();
+}
+
+/* ==========================================================================
+   11. WIRING
+   ========================================================================== */
+function updateCountdown(){
+  const diff = Math.ceil((new Date(state.tripDate + 'T00:00:00') - new Date()) / 86400000);
+  $('days-left').textContent = diff > 0 ? diff : 0;
+}
+
+$('flash-card').addEventListener('click', () => { if(current) reveal(); });
+$('grade-row').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-g]');
+  if(b) grade(Number(b.dataset.g));
+});
+$('type-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') checkTyped(); });
+
+function setMode(m){
+  mode = m;
+  ['mc','type','recall','listen'].forEach(k => $('mode-' + k).classList.toggle('active', k === m));
+  renderCard();
+}
+$('mode-mc').onclick = () => setMode('mc');
+$('mode-type').onclick = () => setMode('type');
+$('mode-recall').onclick = () => setMode('recall');
+$('mode-listen').onclick = () => setMode('listen');
+
+$('speak-btn').onclick = (e) => {
+  e.stopPropagation();          // don't flip the card just to replay audio
+  speak(speakableOf(current));
+};
+$('opt-autoplay').onclick = () => {
+  autoplay = !autoplay;
+  $('opt-autoplay').classList.toggle('active', autoplay);
+  if(autoplay) speak(speakableOf(current));
+};
+
+// J replays the audio without reaching for the button mid-drill.
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'j' && document.activeElement !== $('type-input')) speak(speakableOf(current));
+});
+
+$('opt-romaji').onclick = () => {
+  showRomaji = !showRomaji;
+  $('opt-romaji').classList.toggle('active', showRomaji);
+  renderCard();
+};
+$('opt-reviewonly').onclick = () => {
+  reviewOnly = !reviewOnly;
+  $('opt-reviewonly').classList.toggle('active', reviewOnly);
+  renderCard();
+};
+
+$('unlock-btn').onclick = () => {
+  if(state.unlockedTier < MAX_TIER){
+    state.unlockedTier++;
+    saveState(); renderAll(); renderCard();
+  }
+};
+
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    ['today','path','browse','grammar'].forEach(v =>
+      $('view-' + v).style.display = (v === btn.dataset.view) ? 'block' : 'none');
+  };
+});
+
+/* PWA */
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault(); deferredPrompt = e; $('install-btn').style.display = 'block';
+});
+$('install-btn').onclick = async () => {
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt(); await deferredPrompt.userChoice;
+  deferredPrompt = null; $('install-btn').style.display = 'none';
+};
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+
+/* Boot */
+session();
+autoUnlock();
+renderAll();
+renderCard();
+saveState();
+setInterval(updateCountdown, 60000);
+window.addEventListener('beforeunload', saveState);
+</script>
+</body>
+</html>

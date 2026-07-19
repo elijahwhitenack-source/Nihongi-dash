@@ -1,0 +1,6 @@
+# macOS — this drive is exFAT, so AppleDouble sidecar files appear everywhere
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
