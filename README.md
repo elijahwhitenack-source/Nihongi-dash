@@ -1,80 +1,62 @@
 # Nihongo Dash
 
-A single-file Japanese study PWA — built to go from zero to functional travel Japanese in about a month, at ~30 minutes a day.
+A private, single-user Japanese study PWA — the mechanics I like from Renshuu,
+BunPro, KanaDojo, LingoDeer and Anki, unified into one local-first app on my own
+curriculum, aimed at **JLPT N3 by the July 2027 sitting**.
 
-Installable, works offline, stores everything locally. No accounts, no backend, no tracking.
+Personal use only: no accounts, no other users, no monetization, no telemetry.
+Everything lives on-device.
 
-## Run it
+## Status
 
-It's static — any web server works, but it needs a real origin (service workers refuse to
-register on `file://`, so opening `index.html` directly gives you no offline support and no
-install prompt):
+Rebuild in progress. Shipping in vertical slices.
+
+- **Milestone 1 — Kana Trainer (done):** full data model, FSRS scheduler, kana
+  seed data, drill modes (recognition / typing / confusion pairs / automaticity),
+  progress dashboard, study log.
+- **Next:** `.apkg` + JMdict/KANJIDIC2/Tatoeba import; Vocabulary SRS (Tango N5);
+  Grammar notebook; Kanji module (dormant until months 4–5); optional sync.
+
+## Stack
+
+- **React + TypeScript + Vite**, installable **PWA** (`vite-plugin-pwa`).
+- **IndexedDB via Dexie** as the source of truth — fully offline; desktop for
+  setup/entry, phone (Safari) for quick reviews.
+- **FSRS** spaced-repetition scheduler implemented from the published algorithm
+  in `src/srs/fsrs.ts` (not ported from Anki/BunPro), shared across every item
+  type. Weights are the published FSRS-5 defaults, centralized for later
+  re-optimization once real review history exists.
+
+## Content & licensing
+
+Mechanics are inspired by existing tools; **content is not**. Study data comes
+from open/licensed sources (JMdict, KANJIDIC2, Tatoeba) or my own material
+(Anki decks, handwritten notes). Nothing is scraped or copied from the reference
+apps. Milestone one ships only hand-authored kana; importers come next.
+
+## Develop
 
 ```sh
-python3 -m http.server 8000
-# then open http://localhost:8000
+npm install
+npm run dev          # dev server at /Nihongi-dash/
+npm test             # FSRS unit tests (Vitest)
+npm run build        # typecheck + production build to dist/
+npm run preview      # serve the production build
 ```
 
-## How it works
+Deploys to GitHub Pages from `main` via `.github/workflows/deploy.yml`
+(`npm ci && npm run build` → `dist`). Base path is `/Nihongi-dash/`.
 
-**Tiered progression.** Seven tiers, gated so you start with 46 hiragana and nothing else:
+## Layout
 
-| Tier | Content |
-|---|---|
-| 1 | Hiragana |
-| 2 | Katakana |
-| 3 | Numbers & colors |
-| 4 | Pronouns & time — first real sentences |
-| 5 | Adjectives & things — one word in one slot |
-| 6 | Verbs & actions — particles, ます / ました |
-| 7 | Survival phrases — full sentences |
+```
+src/
+  db/         Dexie schema + types for every entity (kana/vocab/grammar/kanji/…)
+  srs/        FSRS scheduler + tests
+  data/       hand-authored kana seed
+  study/      queue selection, review→FSRS glue, speed/automaticity, sessions
+  features/   Today, KanaTrainer, DrillRunner, Dashboard, StudyLog
+  config.ts   exam date, hour target, phases, readiness thresholds
+```
 
-A tier unlocks automatically once 80% of the previous one is solid. **Path → Unlock early**
-overrides that if you're moving faster.
-
-**Spaced repetition.** A leveled-box scheduler. Boxes 0–3 are an in-session learning ladder
-(1 min → 5 min → 25 min) so new cards recur several times before graduating; boxes 4–7 are real
-retention (6h → 1d → 3d → 7d). Nothing exceeds a week — the whole plan is one month long.
-
-**Adaptive pacing.** A daily new-card quota (default 12) shifts by ±3 based on recent accuracy,
-adjusted once per day. Once the quota is met, the session keeps serving your weakest cards
-rather than dead-ending before you hit 30 minutes.
-
-**Four study modes.** Multiple choice, typing (accepts romaji *or* English), recall, and
-**Listen** — which hides the writing entirely and plays audio as the prompt, then reveals the
-Japanese so ear and eye connect.
-
-## Audio
-
-Uses the browser's speech synthesis with a Japanese voice, preferring a *local* one so it still
-works offline. If none is installed the audio button and Listen mode disable themselves and
-explain how to add one.
-
-- **macOS**: System Settings → Accessibility → Spoken Content → System Voice → Manage Voices → Japanese
-- **iOS**: Settings → Accessibility → Spoken Content → Voices
-
-Press <kbd>J</kbd> to replay the current card's audio.
-
-## Editing the content
-
-All study content lives in three arrays at the top of the `<script>` in `index.html`:
-
-- **`DECK`** — the main deck: kana, vocabulary, and grammar. Grammar entries use
-  `title` / `jp` / `en`; everything else uses `front` / `back`. Grammar is reference material and
-  never becomes a flashcard.
-- **`NOUN_PACK`** — concrete nouns (food, places, objects) that the grammar patterns need
-  something to attach to. Separate so it can be deleted independently.
-- **`PHRASE_TEMPLATES`** — combination drills. Each names the grammar rule it exercises via
-  `rule`, so the Grammar tab can show which phrases drill which pattern.
-
-Tiers are derived at load time by `tierOf()` — an explicit `tier` field wins, otherwise it's
-inferred from the id prefix. Deck entries are never mutated.
-
-## Files
-
-| File | Purpose |
-|---|---|
-| `index.html` | The entire app — markup, styles, logic, content |
-| `sw.js` | Service worker. Network-first for the shell, cache-first for assets |
-| `manifest.json` | PWA manifest |
-| `icon.svg` | App icon |
+The previous single-file version is preserved in `legacy/` and in git history.
