@@ -6,10 +6,13 @@ import { daysUntil } from '../lib/util';
 
 export function Dashboard() {
   const kana = useLiveQuery(() => db.kana.toArray(), [], []);
+  const vocab = useLiveQuery(() => db.vocab.toArray(), [], []);
   const sessions = useLiveQuery(() => db.sessions.toArray(), [], []);
 
   const now = Date.now();
   const ks = kanaStats(kana, now);
+  const vocabSeen = vocab.filter((v) => v.srs.phase !== 'new').length;
+  const vocabRetained = vocab.filter((v) => v.srs.phase === 'review').length;
   const hours = sessions.reduce((s, x) => s + x.durationMin, 0) / 60;
   const days = daysUntil(EXAM_DATE);
   const weeksLeft = Math.max(1, Math.round(days / 7));
@@ -98,6 +101,27 @@ export function Dashboard() {
 
       <div className="panel">
         <div className="section-title" style={{ marginTop: 0 }}>
+          Vocabulary module
+        </div>
+        <div className="stat-grid">
+          <div className="stat">
+            <b>{vocabSeen}/{vocab.length}</b>
+            <div className="lbl">Introduced</div>
+            <div className="sub">starter N5 deck</div>
+          </div>
+          <div className="stat">
+            <b>{vocabRetained}</b>
+            <div className="lbl">Retained</div>
+            <div className="sub">in review phase</div>
+          </div>
+        </div>
+        <p className="tiny muted" style={{ marginTop: 10 }}>
+          Import your Tango N5 .apkg to grow this pool toward the N4 threshold.
+        </p>
+      </div>
+
+      <div className="panel">
+        <div className="section-title" style={{ marginTop: 0 }}>
           Readiness thresholds
         </div>
         <div className="row">
@@ -108,7 +132,9 @@ export function Dashboard() {
         </div>
         <div className="row">
           <span className="r-main">N5 vocab retained (→ N4)</span>
-          <span className="r-sub">0 / {READINESS.n5VocabForN4}</span>
+          <span className="r-sub">
+            {vocabRetained} / {READINESS.n5VocabForN4}
+          </span>
         </div>
         <div className="row">
           <span className="r-main">N4 grammar retained (→ N3)</span>

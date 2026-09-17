@@ -4,14 +4,16 @@ import { EXAM_DATE } from './config';
 import { daysUntil } from './lib/util';
 import { Today } from './features/Today';
 import { KanaTrainer } from './features/KanaTrainer';
+import { Vocab } from './features/Vocab';
 import { Dashboard } from './features/Dashboard';
 import { StudyLog } from './features/StudyLog';
 
-type Tab = 'today' | 'kana' | 'stats' | 'log';
+type Tab = 'today' | 'kana' | 'vocab' | 'stats' | 'log';
 
 const TABS: { id: Tab; label: string; ico: string }[] = [
   { id: 'today', label: 'Today', ico: '📅' },
   { id: 'kana', label: 'Kana', ico: 'あ' },
+  { id: 'vocab', label: 'Vocab', ico: '語' },
   { id: 'stats', label: 'Progress', ico: '📊' },
   { id: 'log', label: 'Log', ico: '✎' },
 ];
@@ -46,6 +48,8 @@ export function App() {
           <Today goKana={() => setTab('kana')} />
         ) : tab === 'kana' ? (
           <KanaTrainer />
+        ) : tab === 'vocab' ? (
+          <Vocab />
         ) : tab === 'stats' ? (
           <Dashboard />
         ) : (
