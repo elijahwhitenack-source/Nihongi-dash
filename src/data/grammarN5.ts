@@ -16,8 +16,8 @@ const ROWS: Omit<GrammarSeed, 'jlpt' | 'notes'>[] = [
     structure:
       'Polite copula. Links two nouns as "A is B" and marks polite (teineigo) speech. Attaches to a noun or na-adjective at the end of a sentence.',
     examples: [
-      { jp: '私は学生です。', en: 'I am a student.' },
-      { jp: 'これは水です。', en: 'This is water.' },
+      { jp: '私は学生です。', ro: 'watashi wa gakusei desu.', en: 'I am a student.' },
+      { jp: 'これは水です。', ro: 'kore wa mizu desu.', en: 'This is water.' },
     ],
     relatedIds: ['g-wa'],
   },
@@ -26,7 +26,9 @@ const ROWS: Omit<GrammarSeed, 'jlpt' | 'notes'>[] = [
     title: '〜は (topic)',
     structure:
       'Marks the topic — what the sentence is about ("as for X"). Often lines up with the English subject, but grammatically it sets the theme, not the grammatical subject. The key N5 contrast is は vs が.',
-    examples: [{ jp: '私は日本語を勉強します。', en: 'As for me, I study Japanese.' }],
+    examples: [
+      { jp: '私は日本語を勉強します。', ro: 'watashi wa nihongo o benkyou shimasu.', en: 'As for me, I study Japanese.' },
+    ],
     relatedIds: ['g-ga', 'g-mo'],
   },
   {
@@ -35,8 +37,8 @@ const ROWS: Omit<GrammarSeed, 'jlpt' | 'notes'>[] = [
     structure:
       'Marks the grammatical subject — used for new information, existence, and answering "who/what". Where は sets a known theme, が puts the focus on the subject itself.',
     examples: [
-      { jp: '猫がいます。', en: 'There is a cat.' },
-      { jp: '誰が来ますか。', en: 'Who is coming?' },
+      { jp: '猫がいます。', ro: 'neko ga imasu.', en: 'There is a cat.' },
+      { jp: '誰が来ますか。', ro: 'dare ga kimasu ka.', en: 'Who is coming?' },
     ],
     relatedIds: ['g-wa'],
   },
@@ -46,8 +48,8 @@ const ROWS: Omit<GrammarSeed, 'jlpt' | 'notes'>[] = [
     structure:
       'Joins two nouns: "A の B" = the B belonging to or associated with A ("A\'s B"). Also links nouns to describe one another.',
     examples: [
-      { jp: '私の本', en: 'my book' },
-      { jp: '日本語の先生', en: 'a teacher of Japanese' },
+      { jp: '私の本', ro: 'watashi no hon', en: 'my book' },
+      { jp: '日本語の先生', ro: 'nihongo no sensei', en: 'a teacher of Japanese' },
     ],
     relatedIds: [],
   },
@@ -57,8 +59,8 @@ const ROWS: Omit<GrammarSeed, 'jlpt' | 'notes'>[] = [
     structure:
       'Marks the direct object — the thing an action is done to. Sits right before the verb.',
     examples: [
-      { jp: 'ご飯を食べます。', en: 'I eat a meal.' },
-      { jp: '本を読みます。', en: 'I read a book.' },
+      { jp: 'ご飯を食べます。', ro: 'gohan o tabemasu.', en: 'I eat a meal.' },
+      { jp: '本を読みます。', ro: 'hon o yomimasu.', en: 'I read a book.' },
     ],
     relatedIds: [],
   },
@@ -68,8 +70,8 @@ const ROWS: Omit<GrammarSeed, 'jlpt' | 'notes'>[] = [
     structure:
       'Marks a destination (with 行く / 来る), a specific point in time, or the location where something exists (with あります / います).',
     examples: [
-      { jp: '学校に行きます。', en: 'I go to school.' },
-      { jp: '七時に起きます。', en: 'I get up at seven.' },
+      { jp: '学校に行きます。', ro: 'gakkou ni ikimasu.', en: 'I go to school.' },
+      { jp: '七時に起きます。', ro: 'shichi-ji ni okimasu.', en: 'I get up at seven.' },
     ],
     relatedIds: [],
   },
@@ -78,7 +80,7 @@ const ROWS: Omit<GrammarSeed, 'jlpt' | 'notes'>[] = [
     title: '〜か (question)',
     structure:
       'Sentence-final particle that turns a polite statement into a question. In formal writing no question mark is needed.',
-    examples: [{ jp: '学生ですか。', en: 'Are you a student?' }],
+    examples: [{ jp: '学生ですか。', ro: 'gakusei desu ka.', en: 'Are you a student?' }],
     relatedIds: [],
   },
   {
@@ -87,8 +89,8 @@ const ROWS: Omit<GrammarSeed, 'jlpt' | 'notes'>[] = [
     structure:
       'Polite verb ending for present and future actions (teineigo). Attaches to the verb stem. The negative is 〜ません.',
     examples: [
-      { jp: '食べます。', en: 'I eat / will eat.' },
-      { jp: '行きません。', en: "I don't / won't go." },
+      { jp: '食べます。', ro: 'tabemasu.', en: 'I eat / will eat.' },
+      { jp: '行きません。', ro: 'ikimasen.', en: "I don't / won't go." },
     ],
     relatedIds: ['g-mashita'],
   },
@@ -97,7 +99,7 @@ const ROWS: Omit<GrammarSeed, 'jlpt' | 'notes'>[] = [
     title: '〜ました (polite past)',
     structure:
       'Polite past tense — a completed action. Attaches to the verb stem. The negative is 〜ませんでした.',
-    examples: [{ jp: '買いました。', en: 'I bought it.' }],
+    examples: [{ jp: '買いました。', ro: 'kaimashita.', en: 'I bought it.' }],
     relatedIds: ['g-masu'],
   },
   {
@@ -105,7 +107,7 @@ const ROWS: Omit<GrammarSeed, 'jlpt' | 'notes'>[] = [
     title: '〜も (also / too)',
     structure:
       'Replaces は or が to mean "also / too". "X も" = "X as well".',
-    examples: [{ jp: '私も行きます。', en: 'I will go too.' }],
+    examples: [{ jp: '私も行きます。', ro: 'watashi mo ikimasu.', en: 'I will go too.' }],
     relatedIds: ['g-wa'],
   },
 ];

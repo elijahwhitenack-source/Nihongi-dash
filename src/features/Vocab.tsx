@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { dueItems, newItems, seenItems } from '../study/queue';
+import { kanaToRomaji } from '../lib/romaji';
 import { DailyReview } from './DailyReview';
 
 export function Vocab() {
@@ -87,6 +88,7 @@ export function Vocab() {
                 <span className="r-main">
                   {dot} {v.word}
                   <span className="muted" style={{ fontSize: '.8rem' }}> · {v.reading}</span>
+                  <span style={{ fontSize: '.8rem', color: 'var(--accent2)' }}> · {kanaToRomaji(v.reading)}</span>
                 </span>
                 <span className="r-sub" style={{ display: 'block' }}>
                   {v.meanings.join(', ')}

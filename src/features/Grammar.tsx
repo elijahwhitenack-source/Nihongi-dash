@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import { newCard } from '../srs/fsrs';
 import { dueItems, newItems, seenItems } from '../study/queue';
+import { kanaToRomaji } from '../lib/romaji';
 import type { Grammar as GrammarPoint } from '../db/types';
 import { DailyReview } from './DailyReview';
 
@@ -139,6 +140,7 @@ function PointRow({
           {g.examples.map((ex, i) => (
             <div className="gr-ex" key={i}>
               <div className="jp" style={{ fontSize: '1rem' }}>{ex.jp}</div>
+              {ex.ro && <div className="ro">{ex.ro}</div>}
               <div className="en">{ex.en}</div>
             </div>
           ))}
@@ -172,17 +174,25 @@ function AddPointForm({ onDone }: { onDone: () => void }) {
   const [title, setTitle] = useState('');
   const [structure, setStructure] = useState('');
   const [exJp, setExJp] = useState('');
+  const [exRo, setExRo] = useState('');
   const [exEn, setExEn] = useState('');
   const [notes, setNotes] = useState('');
 
   const save = async () => {
     if (!title.trim() || !structure.trim()) return;
+    // Use the romaji I typed; otherwise auto-transliterate, but only if the
+    // example is pure kana (kanji can't be transliterated reliably).
+    let ro = exRo.trim();
+    if (!ro && exJp.trim()) {
+      const auto = kanaToRomaji(exJp.trim());
+      if (!/[一-龯]/.test(auto)) ro = auto;
+    }
     const point: GrammarPoint = {
       id: `user-${Date.now()}`,
       title: title.trim(),
       jlpt: undefined,
       structure: structure.trim(),
-      examples: exJp.trim() ? [{ jp: exJp.trim(), en: exEn.trim() }] : [],
+      examples: exJp.trim() ? [{ jp: exJp.trim(), ro: ro || undefined, en: exEn.trim() }] : [],
       relatedIds: [],
       notes: notes.trim(),
       active: true,
@@ -205,6 +215,10 @@ function AddPointForm({ onDone }: { onDone: () => void }) {
       <label className="field">
         <span className="cap">Example (Japanese)</span>
         <input className="text" value={exJp} onChange={(e) => setExJp(e.target.value)} placeholder="ここに座ってもいいですか。" />
+      </label>
+      <label className="field">
+        <span className="cap">Example (romaji — auto-filled if kana only)</span>
+        <input className="text" value={exRo} onChange={(e) => setExRo(e.target.value)} placeholder="koko ni suwattemo ii desu ka." />
       </label>
       <label className="field">
         <span className="cap">Example (English)</span>

@@ -177,6 +177,7 @@ main.view {
 .gr-structure { font-size: .92rem; line-height: 1.55; margin: 0 0 12px; }
 .gr-ex { margin: 8px 0; }
 .gr-ex .jp { font-size: 1.05rem; }
+.gr-ex .ro { font-size: .8rem; color: var(--accent2); }
 .gr-ex .en { font-size: .8rem; color: var(--muted); }
 .gr-notes { font-size: .82rem; color: var(--warn); margin: 12px 0 0; }
 .gr-related { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }

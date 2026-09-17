@@ -5,6 +5,7 @@ import { dueItems, newItems } from '../study/queue';
 import { gradeItem } from '../study/grade';
 import { recordStudy } from '../study/session';
 import { shuffle } from '../lib/util';
+import { kanaToRomaji } from '../lib/romaji';
 
 type Entry =
   | { type: 'kana'; item: Kana }
@@ -170,15 +171,21 @@ function renderGlyph(
   const sub = isKana
     ? `${entry.item.script} · ${entry.item.type}`
     : (entry.item.jlpt ?? 'vocab');
-  const back = isKana
-    ? entry.item.romaji
-    : `${entry.item.reading} — ${entry.item.meanings.join(', ')}`;
   return (
     <div className="kana-face" onClick={onReveal} style={{ cursor: 'pointer' }}>
       <div className={`glyph${combo ? ' combo' : ''}`}>{text}</div>
       <div className="tag">{sub}</div>
       {revealed ? (
-        <div className="answer">{back}</div>
+        isKana ? (
+          <div className="answer">{entry.item.romaji}</div>
+        ) : (
+          <div style={{ textAlign: 'center', marginTop: 10 }}>
+            <div className="answer" style={{ marginTop: 0 }}>
+              {entry.item.reading} · {kanaToRomaji(entry.item.reading)}
+            </div>
+            <div style={{ marginTop: 4 }}>{entry.item.meanings.join(', ')}</div>
+          </div>
+        )
       ) : (
         <div className="tag" style={{ marginTop: 18 }}>
           tap to reveal
@@ -201,6 +208,7 @@ function renderGrammar(g: Grammar, revealed: boolean, titles: Record<string, str
           {g.examples.map((ex, i) => (
             <div className="gr-ex" key={i}>
               <div className="jp">{ex.jp}</div>
+              {ex.ro && <div className="ro">{ex.ro}</div>}
               <div className="en">{ex.en}</div>
             </div>
           ))}

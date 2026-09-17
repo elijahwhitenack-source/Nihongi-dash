@@ -77,7 +77,7 @@ export interface Grammar {
   title: string;            // pattern, e.g. "は vs が"
   jlpt?: 'N5' | 'N4' | 'N3' | 'N2' | 'N1';
   structure: string;        // my own wording — never lifted from BunPro/Tae Kim
-  examples: { jp: string; en: string }[];
+  examples: { jp: string; ro?: string; en: string }[]; // ro = romaji pronunciation
   relatedIds: string[];     // confusable / related grammar points
   notes: string;            // my own notes field
   active: boolean;

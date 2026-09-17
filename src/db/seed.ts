@@ -8,6 +8,7 @@ import type { Grammar, Kana, Vocab } from './types';
 const KANA_FLAG = 'kanaSeeded.v1';
 const VOCAB_FLAG = 'vocabStarterSeeded.v1';
 const GRAMMAR_FLAG = 'grammarStarterSeeded.v1';
+const GRAMMAR_CONTENT_FLAG = 'grammarContent.v2'; // examples gained romaji
 
 /**
  * Populate seed content on first run. Each pool is guarded by its own meta
@@ -18,6 +19,26 @@ export async function ensureSeeded(now: number = Date.now()): Promise<void> {
   await seedKana(now);
   await seedVocab(now);
   await seedGrammar(now);
+  await migrateGrammarContent(now);
+}
+
+/**
+ * One-time content refresh for the starter grammar points (they gained romaji
+ * on their examples). Updates only `examples` + `structure`, preserving each
+ * point's SRS state and my own notes. Fresh installs already seed the current
+ * content, so this is a no-op for them beyond setting the flag.
+ */
+async function migrateGrammarContent(now: number): Promise<void> {
+  if (await db.meta.get(GRAMMAR_CONTENT_FLAG)) return;
+  await db.transaction('rw', db.grammar, async () => {
+    for (const s of GRAMMAR_N5_SEED) {
+      const existing = await db.grammar.get(s.id);
+      if (existing) {
+        await db.grammar.update(s.id, { examples: s.examples, structure: s.structure });
+      }
+    }
+  });
+  await db.meta.put({ key: GRAMMAR_CONTENT_FLAG, value: now });
 }
 
 async function seedKana(now: number): Promise<void> {
