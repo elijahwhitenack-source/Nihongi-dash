@@ -8,23 +8,24 @@ import { DailyReview } from './DailyReview';
 export function Today({ goKana }: { goKana: () => void }) {
   const kana = useLiveQuery(() => db.kana.toArray(), [], []);
   const vocab = useLiveQuery(() => db.vocab.toArray(), [], []);
+  const grammar = useLiveQuery(() => db.grammar.toArray(), [], []);
   const [reviewing, setReviewing] = useState(false);
   const now = Date.now();
 
   const { due, fresh, stats } = useMemo(
     () => ({
-      due: dueItems(kana, now).length + dueItems(vocab, now).length,
-      fresh: newItems(kana).length + newItems(vocab).length,
+      due: dueItems(kana, now).length + dueItems(vocab, now).length + dueItems(grammar, now).length,
+      fresh: newItems(kana).length + newItems(vocab).length + newItems(grammar).length,
       stats: kanaStats(kana, now),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [kana, vocab],
+    [kana, vocab, grammar],
   );
 
   if (reviewing) {
     return (
       <DailyReview
-        include={['kana', 'vocab']}
+        include={['kana', 'vocab', 'grammar']}
         newCap={8}
         label="Daily review"
         onExit={() => setReviewing(false)}
@@ -32,7 +33,7 @@ export function Today({ goKana }: { goKana: () => void }) {
     );
   }
 
-  const nextDue = [...kana, ...vocab]
+  const nextDue = [...kana, ...vocab, ...grammar]
     .filter((k) => k.srs.phase !== 'new')
     .map((k) => k.srs.due)
     .filter((d) => d > now)
@@ -66,8 +67,8 @@ export function Today({ goKana }: { goKana: () => void }) {
           </p>
         )}
         <p className="tiny muted" style={{ marginTop: 8 }}>
-          One queue across kana and vocab, graded Again / Hard / Good / Easy. Fast kana speed
-          drills live in the Kana tab.
+          One queue across kana, vocab and grammar, graded Again / Hard / Good / Easy. Fast kana
+          speed drills live in the Kana tab.
         </p>
       </div>
 

@@ -5,15 +5,17 @@ import { daysUntil } from './lib/util';
 import { Today } from './features/Today';
 import { KanaTrainer } from './features/KanaTrainer';
 import { Vocab } from './features/Vocab';
+import { Grammar } from './features/Grammar';
 import { Dashboard } from './features/Dashboard';
 import { StudyLog } from './features/StudyLog';
 
-type Tab = 'today' | 'kana' | 'vocab' | 'stats' | 'log';
+type Tab = 'today' | 'kana' | 'vocab' | 'grammar' | 'stats' | 'log';
 
 const TABS: { id: Tab; label: string; ico: string }[] = [
   { id: 'today', label: 'Today', ico: '📅' },
   { id: 'kana', label: 'Kana', ico: 'あ' },
   { id: 'vocab', label: 'Vocab', ico: '語' },
+  { id: 'grammar', label: 'Grammar', ico: '文' },
   { id: 'stats', label: 'Progress', ico: '📊' },
   { id: 'log', label: 'Log', ico: '✎' },
 ];
@@ -50,6 +52,8 @@ export function App() {
           <KanaTrainer />
         ) : tab === 'vocab' ? (
           <Vocab />
+        ) : tab === 'grammar' ? (
+          <Grammar />
         ) : tab === 'stats' ? (
           <Dashboard />
         ) : (

@@ -1,30 +1,21 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { db } from '../db/db';
-import type { ItemType, Kana, Rating, Vocab } from '../db/types';
+import type { Grammar, ItemType, Kana, Rating, Vocab } from '../db/types';
 import { dueItems, newItems } from '../study/queue';
 import { gradeItem } from '../study/grade';
 import { recordStudy } from '../study/session';
 import { shuffle } from '../lib/util';
 
-type Entry = { type: 'kana'; item: Kana } | { type: 'vocab'; item: Vocab };
+type Entry =
+  | { type: 'kana'; item: Kana }
+  | { type: 'vocab'; item: Vocab }
+  | { type: 'grammar'; item: Grammar };
 
 interface Props {
-  include: ItemType[];   // which item types this session reviews
-  newCap: number;        // how many new cards to introduce this session
-  label: string;         // study-log module name
+  include: ItemType[];
+  newCap: number;
+  label: string;
   onExit: () => void;
-}
-
-function frontGlyph(e: Entry): { text: string; combo: boolean; sub: string } {
-  if (e.type === 'kana') {
-    return { text: e.item.char, combo: e.item.type === 'combo', sub: `${e.item.script} · ${e.item.type}` };
-  }
-  return { text: e.item.word, combo: false, sub: e.item.jlpt ?? 'vocab' };
-}
-
-function backText(e: Entry): string {
-  if (e.type === 'kana') return e.item.romaji;
-  return `${e.item.reading} — ${e.item.meanings.join(', ')}`;
 }
 
 export function DailyReview({ include, newCap, label, onExit }: Props) {
@@ -33,6 +24,7 @@ export function DailyReview({ include, newCap, label, onExit }: Props) {
   const [pos, setPos] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [stats, setStats] = useState({ reps: 0, correct: 0 });
+  const grammarTitles = useRef<Record<string, string>>({});
 
   const startedAt = useRef(Date.now());
   const statsRef = useRef(stats);
@@ -43,23 +35,28 @@ export function DailyReview({ include, newCap, label, onExit }: Props) {
     let cancelled = false;
     void (async () => {
       const now = Date.now();
-      const entries: Entry[] = [];
-      const newEntries: Entry[] = [];
+      const due: Entry[] = [];
+      const fresh: Entry[] = [];
 
       if (include.includes('kana')) {
         const all = await db.kana.toArray();
-        dueItems(all, now).forEach((k) => entries.push({ type: 'kana', item: k }));
-        newItems(all).forEach((k) => newEntries.push({ type: 'kana', item: k }));
+        dueItems(all, now).forEach((k) => due.push({ type: 'kana', item: k }));
+        newItems(all).forEach((k) => fresh.push({ type: 'kana', item: k }));
       }
       if (include.includes('vocab')) {
         const all = await db.vocab.toArray();
-        dueItems(all, now).forEach((v) => entries.push({ type: 'vocab', item: v }));
-        newItems(all).forEach((v) => newEntries.push({ type: 'vocab', item: v }));
+        dueItems(all, now).forEach((v) => due.push({ type: 'vocab', item: v }));
+        newItems(all).forEach((v) => fresh.push({ type: 'vocab', item: v }));
+      }
+      if (include.includes('grammar')) {
+        const all = await db.grammar.toArray();
+        grammarTitles.current = Object.fromEntries(all.map((g) => [g.id, g.title]));
+        dueItems(all, now).forEach((g) => due.push({ type: 'grammar', item: g }));
+        newItems(all).forEach((g) => fresh.push({ type: 'grammar', item: g }));
       }
       if (cancelled) return;
 
-      const q = [...shuffle(entries), ...shuffle(newEntries).slice(0, newCap)];
-      setQueue(q);
+      setQueue([...shuffle(due), ...shuffle(fresh).slice(0, newCap)]);
       startedAt.current = Date.now();
       setReady(true);
     })();
@@ -84,9 +81,6 @@ export function DailyReview({ include, newCap, label, onExit }: Props) {
 
   useEffect(() => setRevealed(false), [pos]);
 
-  const entry = queue[pos];
-  const gl = useMemo(() => (entry ? frontGlyph(entry) : null), [entry]);
-
   if (!ready) return <p className="center-empty">Loading…</p>;
 
   const finish = async () => {
@@ -94,6 +88,7 @@ export function DailyReview({ include, newCap, label, onExit }: Props) {
     onExit();
   };
 
+  const entry = queue[pos];
   if (!entry) {
     return (
       <div>
@@ -116,7 +111,6 @@ export function DailyReview({ include, newCap, label, onExit }: Props) {
     await gradeItem(entry.type, entry.item, rating);
     setStats((s) => ({ reps: s.reps + 1, correct: s.correct + (rating > 1 ? 1 : 0) }));
     if (rating === 1) {
-      // requeue a missed card a few positions later in this session
       setQueue((q) => {
         const next = [...q];
         next.splice(Math.min(pos + 3, next.length), 0, entry);
@@ -137,12 +131,9 @@ export function DailyReview({ include, newCap, label, onExit }: Props) {
         </button>
       </div>
 
-      <div className="kana-face" onClick={() => setRevealed(true)} style={{ cursor: 'pointer' }}>
-        <div className={`glyph${gl!.combo ? ' combo' : ''}`}>{gl!.text}</div>
-        <div className="tag">{gl!.sub}</div>
-        {revealed && <div className="answer">{backText(entry)}</div>}
-        {!revealed && <div className="tag" style={{ marginTop: 18 }}>tap to reveal</div>}
-      </div>
+      {entry.type === 'grammar'
+        ? renderGrammar(entry.item, revealed, grammarTitles.current)
+        : renderGlyph(entry, revealed, () => setRevealed(true))}
 
       {!revealed ? (
         <button className="btn" onClick={() => setRevealed(true)}>
@@ -162,6 +153,68 @@ export function DailyReview({ include, newCap, label, onExit }: Props) {
           <button className="g-easy" onClick={() => grade(4)}>
             Easy
           </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function renderGlyph(
+  entry: { type: 'kana'; item: Kana } | { type: 'vocab'; item: Vocab },
+  revealed: boolean,
+  onReveal: () => void,
+) {
+  const isKana = entry.type === 'kana';
+  const text = isKana ? entry.item.char : entry.item.word;
+  const combo = isKana && entry.item.type === 'combo';
+  const sub = isKana
+    ? `${entry.item.script} · ${entry.item.type}`
+    : (entry.item.jlpt ?? 'vocab');
+  const back = isKana
+    ? entry.item.romaji
+    : `${entry.item.reading} — ${entry.item.meanings.join(', ')}`;
+  return (
+    <div className="kana-face" onClick={onReveal} style={{ cursor: 'pointer' }}>
+      <div className={`glyph${combo ? ' combo' : ''}`}>{text}</div>
+      <div className="tag">{sub}</div>
+      {revealed ? (
+        <div className="answer">{back}</div>
+      ) : (
+        <div className="tag" style={{ marginTop: 18 }}>
+          tap to reveal
+        </div>
+      )}
+    </div>
+  );
+}
+
+function renderGrammar(g: Grammar, revealed: boolean, titles: Record<string, string>) {
+  return (
+    <div className="gr-card">
+      <div className="gr-pattern">{g.title}</div>
+      <div className="tag" style={{ textAlign: 'center' }}>
+        {g.jlpt ?? 'grammar'} · recall how it's used
+      </div>
+      {revealed && (
+        <div className="gr-body">
+          <p className="gr-structure">{g.structure}</p>
+          {g.examples.map((ex, i) => (
+            <div className="gr-ex" key={i}>
+              <div className="jp">{ex.jp}</div>
+              <div className="en">{ex.en}</div>
+            </div>
+          ))}
+          {g.notes && <p className="gr-notes">📝 {g.notes}</p>}
+          {g.relatedIds.length > 0 && (
+            <div className="gr-related">
+              <span className="tiny muted">compare: </span>
+              {g.relatedIds.map((id) => (
+                <span className="pill dim" key={id}>
+                  {titles[id] ?? id}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

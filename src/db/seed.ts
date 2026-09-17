@@ -1,11 +1,13 @@
 import { db } from './db';
 import { KANA_SEED } from '../data/kana';
 import { VOCAB_N5_SEED } from '../data/vocabN5';
+import { GRAMMAR_N5_SEED } from '../data/grammarN5';
 import { newCard } from '../srs/fsrs';
-import type { Kana, Vocab } from './types';
+import type { Grammar, Kana, Vocab } from './types';
 
 const KANA_FLAG = 'kanaSeeded.v1';
 const VOCAB_FLAG = 'vocabStarterSeeded.v1';
+const GRAMMAR_FLAG = 'grammarStarterSeeded.v1';
 
 /**
  * Populate seed content on first run. Each pool is guarded by its own meta
@@ -15,6 +17,7 @@ const VOCAB_FLAG = 'vocabStarterSeeded.v1';
 export async function ensureSeeded(now: number = Date.now()): Promise<void> {
   await seedKana(now);
   await seedVocab(now);
+  await seedGrammar(now);
 }
 
 async function seedKana(now: number): Promise<void> {
@@ -43,4 +46,17 @@ async function seedVocab(now: number): Promise<void> {
     await db.vocab.bulkAdd(cards);
   }
   await db.meta.put({ key: VOCAB_FLAG, value: now });
+}
+
+async function seedGrammar(now: number): Promise<void> {
+  if (await db.meta.get(GRAMMAR_FLAG)) return;
+  if ((await db.grammar.count()) === 0) {
+    const cards: Grammar[] = GRAMMAR_N5_SEED.map((s) => ({
+      ...s,
+      active: true,
+      srs: newCard(now),
+    }));
+    await db.grammar.bulkAdd(cards);
+  }
+  await db.meta.put({ key: GRAMMAR_FLAG, value: now });
 }

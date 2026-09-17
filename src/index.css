@@ -167,6 +167,20 @@ main.view {
 .g-good { background: var(--good); color: #08281a; }
 .g-easy { background: var(--accent2); color: #08161e; }
 
+/* grammar review card */
+.gr-card {
+  background: var(--panel2); border: 1px solid var(--line2); border-radius: 18px;
+  padding: 22px 18px; margin-bottom: 14px;
+}
+.gr-pattern { font-size: 1.9rem; font-weight: 600; text-align: center; margin-bottom: 4px; }
+.gr-body { margin-top: 16px; border-top: 1px solid var(--line2); padding-top: 14px; }
+.gr-structure { font-size: .92rem; line-height: 1.55; margin: 0 0 12px; }
+.gr-ex { margin: 8px 0; }
+.gr-ex .jp { font-size: 1.05rem; }
+.gr-ex .en { font-size: .8rem; color: var(--muted); }
+.gr-notes { font-size: .82rem; color: var(--warn); margin: 12px 0 0; }
+.gr-related { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
 .verdict { text-align: center; font-weight: 700; font-size: 1.05rem; padding: 6px 0 2px; }
 .verdict.right { color: var(--good); }
 .verdict.wrong { color: var(--bad); }

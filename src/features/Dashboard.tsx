@@ -7,12 +7,15 @@ import { daysUntil } from '../lib/util';
 export function Dashboard() {
   const kana = useLiveQuery(() => db.kana.toArray(), [], []);
   const vocab = useLiveQuery(() => db.vocab.toArray(), [], []);
+  const grammar = useLiveQuery(() => db.grammar.toArray(), [], []);
   const sessions = useLiveQuery(() => db.sessions.toArray(), [], []);
 
   const now = Date.now();
   const ks = kanaStats(kana, now);
   const vocabSeen = vocab.filter((v) => v.srs.phase !== 'new').length;
   const vocabRetained = vocab.filter((v) => v.srs.phase === 'review').length;
+  const grammarSeen = grammar.filter((g) => g.srs.phase !== 'new').length;
+  const grammarRetained = grammar.filter((g) => g.srs.phase === 'review').length;
   const hours = sessions.reduce((s, x) => s + x.durationMin, 0) / 60;
   const days = daysUntil(EXAM_DATE);
   const weeksLeft = Math.max(1, Math.round(days / 7));
@@ -122,6 +125,24 @@ export function Dashboard() {
 
       <div className="panel">
         <div className="section-title" style={{ marginTop: 0 }}>
+          Grammar module
+        </div>
+        <div className="stat-grid">
+          <div className="stat">
+            <b>{grammarSeen}/{grammar.length}</b>
+            <div className="lbl">Introduced</div>
+            <div className="sub">notebook points</div>
+          </div>
+          <div className="stat">
+            <b>{grammarRetained}</b>
+            <div className="lbl">Retained</div>
+            <div className="sub">in review phase</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="panel">
+        <div className="section-title" style={{ marginTop: 0 }}>
           Readiness thresholds
         </div>
         <div className="row">
@@ -138,7 +159,9 @@ export function Dashboard() {
         </div>
         <div className="row">
           <span className="r-main">N4 grammar retained (→ N3)</span>
-          <span className="r-sub">0 / {READINESS.n4GrammarForN3}</span>
+          <span className="r-sub">
+            {grammarRetained} / {READINESS.n4GrammarForN3}
+          </span>
         </div>
         <p className="tiny muted" style={{ marginTop: 10 }}>
           Vocab, grammar and kanji modules activate in later phases — thresholds shown so the bar
