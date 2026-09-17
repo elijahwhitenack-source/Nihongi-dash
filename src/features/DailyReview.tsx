@@ -184,6 +184,15 @@ function renderGlyph(
               {entry.item.reading} · {kanaToRomaji(entry.item.reading)}
             </div>
             <div style={{ marginTop: 4 }}>{entry.item.meanings.join(', ')}</div>
+            {entry.item.example && (
+              <div className="gr-ex" style={{ marginTop: 12, textAlign: 'center' }}>
+                <div className="jp" style={{ fontSize: '1rem' }}>{entry.item.example.jp}</div>
+                {entry.item.example.reading && (
+                  <div className="ro">{kanaToRomaji(entry.item.example.reading)}</div>
+                )}
+                {entry.item.example.en && <div className="en">{entry.item.example.en}</div>}
+              </div>
+            )}
           </div>
         )
       ) : (

@@ -66,6 +66,9 @@ export interface Vocab {
   partOfSpeech?: string[];
   sourceDeck?: string;      // e.g. "Tango N5"
   exampleRefs?: number[];   // Tatoeba sentence ids
+  // Inline example carried by imported decks. `reading` is pure kana so the
+  // app derives romaji from it; `jp` is the surface (may contain kanji).
+  example?: { jp: string; reading?: string; en?: string };
   active: boolean;
   srs: SrsState;
 }

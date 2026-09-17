@@ -119,7 +119,8 @@ export function Dashboard() {
           </div>
         </div>
         <p className="tiny muted" style={{ marginTop: 10 }}>
-          Import your Tango N5 .apkg to grow this pool toward the N4 threshold.
+          Tango N5 deck loaded ({vocab.length} words). Retained count climbs as words reach
+          the review phase.
         </p>
       </div>
 

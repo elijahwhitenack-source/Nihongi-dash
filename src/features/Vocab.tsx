@@ -5,9 +5,13 @@ import { dueItems, newItems, seenItems } from '../study/queue';
 import { kanaToRomaji } from '../lib/romaji';
 import { DailyReview } from './DailyReview';
 
+const CAP = 60;
+
 export function Vocab() {
   const all = useLiveQuery(() => db.vocab.toArray(), [], []);
   const [reviewing, setReviewing] = useState<'due' | 'new' | null>(null);
+  const [query, setQuery] = useState('');
+  const [source, setSource] = useState<string>('all');
   const now = Date.now();
 
   const counts = useMemo(
@@ -20,6 +24,26 @@ export function Vocab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [all],
   );
+
+  const sources = useMemo(
+    () => Array.from(new Set(all.map((v) => v.sourceDeck).filter(Boolean))) as string[],
+    [all],
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return all
+      .filter((v) => source === 'all' || v.sourceDeck === source)
+      .filter(
+        (v) =>
+          !q ||
+          v.word.toLowerCase().includes(q) ||
+          v.reading.toLowerCase().includes(q) ||
+          kanaToRomaji(v.reading).toLowerCase().includes(q) ||
+          v.meanings.join(' ').toLowerCase().includes(q),
+      )
+      .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
+  }, [all, query, source]);
 
   if (reviewing) {
     return (
@@ -65,38 +89,64 @@ export function Vocab() {
           Learn new ({counts.fresh})
         </button>
         <p className="tiny muted" style={{ marginTop: 8 }}>
-          Starter N5 deck. Importing your Tango N5 .apkg (next up) adds to this pool.
+          Your Tango N5 deck (1000+ words with example sentences) is loaded. New words
+          drip in as you review; SRS paces the rest.
         </p>
       </div>
 
-      <div className="section-title">Deck</div>
-      {all
-        .slice()
-        .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
-        .map((v) => {
-          const dot =
-            v.srs.phase === 'new'
-              ? '⚪️'
-              : v.srs.phase === 'review' && v.srs.stability >= 7
-                ? '🟢'
-                : v.srs.phase === 'review'
-                  ? '🟡'
-                  : '🔴';
-          return (
-            <div className="row" key={v.id}>
-              <span>
-                <span className="r-main">
-                  {dot} {v.word}
-                  <span className="muted" style={{ fontSize: '.8rem' }}> · {v.reading}</span>
-                  <span style={{ fontSize: '.8rem', color: 'var(--accent2)' }}> · {kanaToRomaji(v.reading)}</span>
-                </span>
-                <span className="r-sub" style={{ display: 'block' }}>
-                  {v.meanings.join(', ')}
-                </span>
+      <div className="section-title">Deck ({counts.total})</div>
+
+      {sources.length > 1 && (
+        <div className="filter-row">
+          <button className={source === 'all' ? 'active' : ''} onClick={() => setSource('all')}>
+            All
+          </button>
+          {sources.map((s) => (
+            <button key={s} className={source === s ? 'active' : ''} onClick={() => setSource(s)}>
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <input
+        className="text"
+        style={{ marginBottom: 12 }}
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="search word, reading, romaji, or meaning…"
+      />
+
+      {filtered.slice(0, CAP).map((v) => {
+        const dot =
+          v.srs.phase === 'new'
+            ? '⚪️'
+            : v.srs.phase === 'review' && v.srs.stability >= 7
+              ? '🟢'
+              : v.srs.phase === 'review'
+                ? '🟡'
+                : '🔴';
+        return (
+          <div className="row" key={v.id}>
+            <span>
+              <span className="r-main">
+                {dot} {v.word}
+                <span className="muted" style={{ fontSize: '.8rem' }}> · {v.reading}</span>
+                <span style={{ fontSize: '.8rem', color: 'var(--accent2)' }}> · {kanaToRomaji(v.reading)}</span>
               </span>
-            </div>
-          );
-        })}
+              <span className="r-sub" style={{ display: 'block' }}>
+                {v.meanings.join(', ')}
+              </span>
+            </span>
+          </div>
+        );
+      })}
+      {filtered.length > CAP && (
+        <p className="tiny muted" style={{ marginTop: 8 }}>
+          Showing {CAP} of {filtered.length}. Narrow it with search.
+        </p>
+      )}
+      {filtered.length === 0 && <p className="center-empty">No matches.</p>}
     </div>
   );
 }
